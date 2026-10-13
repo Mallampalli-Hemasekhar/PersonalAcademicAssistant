@@ -117,7 +117,7 @@ fun BottomNavScreen() {
 
 @Composable
 fun ScheduleScreen() {
-    SubjectScreen()
+    TimetableScreen()
 }
 
 
