@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195996358989",
+    "project_id": "personal-academic-assistant",
+    "storage_bucket": "personal-academic-assistant.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195996358989:android:e7e4ef09bc46dbb3bc3f04",
+        "android_client_info": {
+          "package_name": "com.example.personalacademicassistant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC3bZhCuYR3tjE7vNeloMospqoVVHk55lM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
