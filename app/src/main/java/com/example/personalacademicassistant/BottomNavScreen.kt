@@ -125,12 +125,7 @@ fun ScheduleScreen() {
 
 @Composable
 fun TasksScreen() {
-
-    SimpleScreen(
-        icon = "✅",
-        title = "Tasks",
-        description = "Manage assignments, homework and deadlines."
-    )
+    AssignmentScreen()
 }
 
 
