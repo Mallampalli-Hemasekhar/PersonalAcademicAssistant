@@ -133,12 +133,7 @@ fun TasksScreen() {
 
 @Composable
 fun ProgressScreen() {
-
-    SimpleScreen(
-        icon = "📊",
-        title = "Progress",
-        description = "Track attendance, grades and academic performance."
-    )
+    AttendanceScreen()
 }
 
 
