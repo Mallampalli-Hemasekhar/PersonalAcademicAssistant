@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
 
 @Composable
 fun BottomNavScreen() {
@@ -151,7 +154,8 @@ fun ScheduleScreen() {
                 .fillMaxWidth()
                 .padding(12.dp),
 
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement =
+                Arrangement.spacedBy(10.dp)
 
         ) {
 
@@ -245,15 +249,121 @@ fun ProgressScreen() {
 @Composable
 fun ProfileScreen() {
 
-    SimpleScreen(
+    var showNotes by remember {
+        mutableStateOf(false)
+    }
 
-        icon = "👤",
 
-        title = "Profile",
+    if (showNotes) {
 
-        description =
-            "Manage your student profile and academic information."
-    )
+        Column(
+
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F7FB))
+
+        ) {
+
+            Button(
+
+                onClick = {
+                    showNotes = false
+                },
+
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 12.dp
+                    ),
+
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3F51B5)
+                )
+
+            ) {
+
+                Text(
+                    text = "← Back to Profile"
+                )
+            }
+
+
+            NotesScreen()
+        }
+
+    } else {
+
+        Column(
+
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F7FB))
+                .padding(20.dp),
+
+            horizontalAlignment =
+                Alignment.CenterHorizontally
+
+        ) {
+
+            Text(
+                text = "👤",
+                fontSize = 55.sp
+            )
+
+
+            Text(
+
+                text = "Profile",
+
+                fontSize = 28.sp,
+
+                fontWeight = FontWeight.Bold,
+
+                color = Color(0xFF172554)
+            )
+
+
+            Text(
+
+                text =
+                    "Manage your student profile and academic information.",
+
+                fontSize = 16.sp,
+
+                color = Color.Gray
+            )
+
+
+            Spacer(
+                modifier = Modifier.height(30.dp)
+            )
+
+
+            Button(
+
+                onClick = {
+                    showNotes = true
+                },
+
+                modifier = Modifier.fillMaxWidth(),
+
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF3F51B5)
+                )
+
+            ) {
+
+                Text(
+
+                    text = "📒 Academic Notes",
+
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
 }
 
 
@@ -276,9 +386,11 @@ fun SimpleScreen(
             .fillMaxSize()
             .background(Color(0xFFF5F7FB)),
 
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment =
+            Alignment.CenterHorizontally,
 
-        verticalArrangement = Arrangement.Center
+        verticalArrangement =
+            Arrangement.Center
 
     ) {
 
