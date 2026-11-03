@@ -232,11 +232,68 @@ fun TasksScreen() {
 
 /* ---------------- PROGRESS SCREEN ---------------- */
 
+
 @Composable
 fun ProgressScreen() {
 
-    AttendanceScreen()
+    var showAnalytics by remember {
+        mutableStateOf(false)
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F7FB))
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+
+            Button(
+                onClick = {
+                    showAnalytics = false
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (!showAnalytics) {
+                        Color(0xFF3F51B5)
+                    } else {
+                        Color.LightGray
+                    }
+                )
+            ) {
+                Text("📊 Attendance")
+            }
+
+            Button(
+                onClick = {
+                    showAnalytics = true
+                },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (showAnalytics) {
+                        Color(0xFF00897B)
+                    } else {
+                        Color.LightGray
+                    }
+                )
+            ) {
+                Text("📈 Analytics")
+            }
+        }
+
+        if (showAnalytics) {
+            PerformanceAnalyticsScreen()
+        } else {
+            AttendanceScreen()
+        }
+    }
 }
+
 
 
 /* ---------------- PROFILE SCREEN ---------------- */
