@@ -38,40 +38,25 @@ fun BottomNavScreen() {
     }
 
     val items = listOf(
-        "Home",
-        "Schedule",
-        "Tasks",
-        "Progress",
-        "Profile"
+        "Home", "Schedule", "Tasks", "Progress", "Profile"
     )
 
     val icons = listOf(
-        "🏠",
-        "📅",
-        "✅",
-        "📊",
-        "👤"
+        "🏠", "📅", "✅", "📊", "👤"
     )
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = Color.White
-            ) {
+            NavigationBar(containerColor = Color.White) {
                 items.forEachIndexed { index, item ->
                     NavigationBarItem(
                         selected = selectedItem == index,
-                        onClick = {
-                            selectedItem = index
-                        },
+                        onClick = { selectedItem = index },
                         icon = {
-                            Text(
-                                text = icons[index],
-                                fontSize = 20.sp
-                            )
+                            Text(icons[index], fontSize = 20.sp)
                         },
                         label = {
-                            Text(text = item)
+                            Text(item)
                         }
                     )
                 }
@@ -89,26 +74,11 @@ fun BottomNavScreen() {
         ) {
 
             when (selectedItem) {
-
-                0 -> {
-                    DashboardScreen()
-                }
-
-                1 -> {
-                    ScheduleScreen()
-                }
-
-                2 -> {
-                    TasksScreen()
-                }
-
-                3 -> {
-                    ProgressScreen()
-                }
-
-                4 -> {
-                    ProfileScreen()
-                }
+                0 -> DashboardScreen()
+                1 -> ScheduleScreen()
+                2 -> TasksScreen()
+                3 -> ProgressScreen()
+                4 -> ProfileScreen()
             }
         }
     }
@@ -137,43 +107,31 @@ fun ScheduleScreen() {
         ) {
 
             Button(
-                onClick = {
-                    showTimetable = true
-                },
+                onClick = { showTimetable = true },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (showTimetable) {
-                            Color(0xFF3F51B5)
-                        } else {
-                            Color.LightGray
-                        }
+                    containerColor = if (showTimetable) {
+                        Color(0xFF3F51B5)
+                    } else {
+                        Color.LightGray
+                    }
                 )
             ) {
-                Text(
-                    text = "📅 Timetable",
-                    fontSize = 14.sp
-                )
+                Text("📅 Timetable", fontSize = 14.sp)
             }
 
             Button(
-                onClick = {
-                    showTimetable = false
-                },
+                onClick = { showTimetable = false },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        if (!showTimetable) {
-                            Color(0xFF3F51B5)
-                        } else {
-                            Color.LightGray
-                        }
+                    containerColor = if (!showTimetable) {
+                        Color(0xFF3F51B5)
+                    } else {
+                        Color.LightGray
+                    }
                 )
             ) {
-                Text(
-                    text = "📝 Exams",
-                    fontSize = 14.sp
-                )
+                Text("📝 Exams", fontSize = 14.sp)
             }
         }
 
@@ -215,9 +173,7 @@ fun ProgressScreen() {
         ) {
 
             Button(
-                onClick = {
-                    showAnalytics = false
-                },
+                onClick = { showAnalytics = false },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (!showAnalytics) {
@@ -231,9 +187,7 @@ fun ProgressScreen() {
             }
 
             Button(
-                onClick = {
-                    showAnalytics = true
-                },
+                onClick = { showAnalytics = true },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (showAnalytics) {
@@ -264,199 +218,167 @@ fun ProfileScreen() {
         mutableStateOf("Profile")
     }
 
-    if (selectedFeature == "Notes") {
+    when (selectedFeature) {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F7FB))
-        ) {
+        "Notes" -> {
 
-            Button(
-                onClick = {
-                    selectedFeature = "Profile"
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 20.dp,
-                        end = 20.dp,
-                        top = 12.dp
-                    ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3F51B5)
-                )
-            ) {
-                Text("← Back to Profile")
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+            FeatureContainer(
+                buttonColor = Color(0xFF3F51B5),
+                onBack = { selectedFeature = "Profile" }
             ) {
                 NotesScreen()
             }
         }
 
-    } else if (selectedFeature == "GPA") {
+        "GPA" -> {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F7FB))
-        ) {
-
-            Button(
-                onClick = {
-                    selectedFeature = "Profile"
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 20.dp,
-                        end = 20.dp,
-                        top = 12.dp
-                    ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00897B)
-                )
-            ) {
-                Text("← Back to Profile")
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { selectedFeature = "Profile" }
             ) {
                 GPAScreen()
             }
         }
 
-    } else if (selectedFeature == "StudyPlanner") {
+        "StudyPlanner" -> {
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F7FB))
-        ) {
-
-            Button(
-                onClick = {
-                    selectedFeature = "Profile"
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 20.dp,
-                        end = 20.dp,
-                        top = 12.dp
-                    ),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF9800)
-                )
-            ) {
-                Text("← Back to Profile")
-            }
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
+            FeatureContainer(
+                buttonColor = Color(0xFFFF9800),
+                onBack = { selectedFeature = "Profile" }
             ) {
                 StudyPlannerScreen()
             }
         }
 
-    } else {
+        "DailyGoals" -> {
 
-        Column(
+            FeatureContainer(
+                buttonColor = Color(0xFF7B1FA2),
+                onBack = { selectedFeature = "Profile" }
+            ) {
+                DailyGoalsScreen()
+            }
+        }
+
+        else -> {
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF5F7FB))
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Text(
+                    text = "👤",
+                    fontSize = 55.sp
+                )
+
+                Text(
+                    text = "Profile",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF172554)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Manage your student profile and academic information.",
+                    fontSize = 16.sp,
+                    color = Color.Gray
+                )
+
+                Spacer(modifier = Modifier.height(30.dp))
+
+                Button(
+                    onClick = { selectedFeature = "Notes" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3F51B5)
+                    )
+                ) {
+                    Text("📒 Academic Notes", fontSize = 16.sp)
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Button(
+                    onClick = { selectedFeature = "GPA" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00897B)
+                    )
+                ) {
+                    Text("🎓 GPA / CGPA Calculator", fontSize = 16.sp)
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Button(
+                    onClick = { selectedFeature = "StudyPlanner" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF9800)
+                    )
+                ) {
+                    Text("📚 Smart Study Planner", fontSize = 16.sp)
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Button(
+                    onClick = { selectedFeature = "DailyGoals" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF7B1FA2)
+                    )
+                ) {
+                    Text("🎯 Daily Goals", fontSize = 16.sp)
+                }
+            }
+        }
+    }
+}
+
+/* ---------------- REUSABLE FEATURE CONTAINER ---------------- */
+
+@Composable
+fun FeatureContainer(
+    buttonColor: Color,
+    onBack: () -> Unit,
+    content: @Composable () -> Unit
+) {
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F7FB))
+    ) {
+
+        Button(
+            onClick = onBack,
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFF5F7FB))
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 12.dp
+                ),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = buttonColor
+            )
         ) {
+            Text("← Back to Profile")
+        }
 
-            Text(
-                text = "👤",
-                fontSize = 55.sp
-            )
-
-            Text(
-                text = "Profile",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            Text(
-                text = "Manage your student profile and academic information.",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
-
-            Spacer(
-                modifier = Modifier.height(30.dp)
-            )
-
-            Button(
-                onClick = {
-                    selectedFeature = "Notes"
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF3F51B5)
-                )
-            ) {
-                Text(
-                    text = "📒 Academic Notes",
-                    fontSize = 16.sp
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(15.dp)
-            )
-
-            Button(
-                onClick = {
-                    selectedFeature = "GPA"
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00897B)
-                )
-            ) {
-                Text(
-                    text = "🎓 GPA / CGPA Calculator",
-                    fontSize = 16.sp
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(15.dp)
-            )
-
-            Button(
-                onClick = {
-                    selectedFeature = "StudyPlanner"
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFF9800)
-                )
-            ) {
-                Text(
-                    text = "📚 Smart Study Planner",
-                    fontSize = 16.sp
-                )
-            }
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            content()
         }
     }
 }
@@ -478,20 +400,17 @@ fun SimpleScreen(
         verticalArrangement = Arrangement.Center
     ) {
 
-        Text(
-            text = icon,
-            fontSize = 55.sp
-        )
+        Text(icon, fontSize = 55.sp)
 
         Text(
-            text = title,
+            title,
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF172554)
         )
 
         Text(
-            text = description,
+            description,
             fontSize = 16.sp,
             color = Color.Gray
         )
