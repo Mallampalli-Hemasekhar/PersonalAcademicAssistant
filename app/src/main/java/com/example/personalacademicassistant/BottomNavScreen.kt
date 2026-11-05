@@ -3,6 +3,7 @@ package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -53,53 +54,38 @@ fun BottomNavScreen() {
     )
 
     Scaffold(
-
         bottomBar = {
-
             NavigationBar(
                 containerColor = Color.White
             ) {
-
                 items.forEachIndexed { index, item ->
-
                     NavigationBarItem(
-
                         selected = selectedItem == index,
-
                         onClick = {
                             selectedItem = index
                         },
-
                         icon = {
                             Text(
                                 text = icons[index],
                                 fontSize = 20.sp
                             )
                         },
-
                         label = {
-                            Text(
-                                text = item
-                            )
+                            Text(text = item)
                         }
                     )
                 }
             }
         }
-
     ) { innerPadding ->
 
         Column(
-
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(Color(0xFFF5F7FB)),
-
             horizontalAlignment = Alignment.CenterHorizontally,
-
             verticalArrangement = Arrangement.Top
-
         ) {
 
             when (selectedItem) {
@@ -128,7 +114,6 @@ fun BottomNavScreen() {
     }
 }
 
-
 /* ---------------- SCHEDULE SCREEN ---------------- */
 
 @Composable
@@ -139,33 +124,24 @@ fun ScheduleScreen() {
     }
 
     Column(
-
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7FB))
-
     ) {
 
         Row(
-
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-
             horizontalArrangement = Arrangement.spacedBy(10.dp)
-
         ) {
 
             Button(
-
                 onClick = {
                     showTimetable = true
                 },
-
                 modifier = Modifier.weight(1f),
-
                 colors = ButtonDefaults.buttonColors(
-
                     containerColor =
                         if (showTimetable) {
                             Color(0xFF3F51B5)
@@ -173,9 +149,7 @@ fun ScheduleScreen() {
                             Color.LightGray
                         }
                 )
-
             ) {
-
                 Text(
                     text = "📅 Timetable",
                     fontSize = 14.sp
@@ -183,15 +157,11 @@ fun ScheduleScreen() {
             }
 
             Button(
-
                 onClick = {
                     showTimetable = false
                 },
-
                 modifier = Modifier.weight(1f),
-
                 colors = ButtonDefaults.buttonColors(
-
                     containerColor =
                         if (!showTimetable) {
                             Color(0xFF3F51B5)
@@ -199,9 +169,7 @@ fun ScheduleScreen() {
                             Color.LightGray
                         }
                 )
-
             ) {
-
                 Text(
                     text = "📝 Exams",
                     fontSize = 14.sp
@@ -210,28 +178,21 @@ fun ScheduleScreen() {
         }
 
         if (showTimetable) {
-
             TimetableScreen()
-
         } else {
-
             ExamScreen()
         }
     }
 }
 
-
 /* ---------------- TASKS SCREEN ---------------- */
 
 @Composable
 fun TasksScreen() {
-
     AssignmentScreen()
 }
 
-
 /* ---------------- PROGRESS SCREEN ---------------- */
-
 
 @Composable
 fun ProgressScreen() {
@@ -294,8 +255,6 @@ fun ProgressScreen() {
     }
 }
 
-
-
 /* ---------------- PROFILE SCREEN ---------------- */
 
 @Composable
@@ -308,19 +267,15 @@ fun ProfileScreen() {
     if (selectedFeature == "Notes") {
 
         Column(
-
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF5F7FB))
-
         ) {
 
             Button(
-
                 onClick = {
                     selectedFeature = "Profile"
                 },
-
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
@@ -328,37 +283,34 @@ fun ProfileScreen() {
                         end = 20.dp,
                         top = 12.dp
                     ),
-
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF3F51B5)
                 )
-
             ) {
-
-                Text(
-                    text = "← Back to Profile"
-                )
+                Text("← Back to Profile")
             }
 
-            NotesScreen()
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                NotesScreen()
+            }
         }
 
     } else if (selectedFeature == "GPA") {
 
         Column(
-
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF5F7FB))
-
         ) {
 
             Button(
-
                 onClick = {
                     selectedFeature = "Profile"
                 },
-
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
@@ -366,32 +318,65 @@ fun ProfileScreen() {
                         end = 20.dp,
                         top = 12.dp
                     ),
-
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00897B)
                 )
-
             ) {
-
-                Text(
-                    text = "← Back to Profile"
-                )
+                Text("← Back to Profile")
             }
 
-            GPAScreen()
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                GPAScreen()
+            }
+        }
+
+    } else if (selectedFeature == "StudyPlanner") {
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F7FB))
+        ) {
+
+            Button(
+                onClick = {
+                    selectedFeature = "Profile"
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 12.dp
+                    ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF9800)
+                )
+            ) {
+                Text("← Back to Profile")
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                StudyPlannerScreen()
+            }
         }
 
     } else {
 
         Column(
-
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF5F7FB))
                 .padding(20.dp),
-
             horizontalAlignment = Alignment.CenterHorizontally
-
         ) {
 
             Text(
@@ -420,22 +405,15 @@ fun ProfileScreen() {
                 modifier = Modifier.height(30.dp)
             )
 
-            // Academic Notes Button
-
             Button(
-
                 onClick = {
                     selectedFeature = "Notes"
                 },
-
                 modifier = Modifier.fillMaxWidth(),
-
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF3F51B5)
                 )
-
             ) {
-
                 Text(
                     text = "📒 Academic Notes",
                     fontSize = 16.sp
@@ -446,24 +424,36 @@ fun ProfileScreen() {
                 modifier = Modifier.height(15.dp)
             )
 
-            // GPA Calculator Button
-
             Button(
-
                 onClick = {
                     selectedFeature = "GPA"
                 },
-
                 modifier = Modifier.fillMaxWidth(),
-
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF00897B)
                 )
-
             ) {
-
                 Text(
                     text = "🎓 GPA / CGPA Calculator",
+                    fontSize = 16.sp
+                )
+            }
+
+            Spacer(
+                modifier = Modifier.height(15.dp)
+            )
+
+            Button(
+                onClick = {
+                    selectedFeature = "StudyPlanner"
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF9800)
+                )
+            ) {
+                Text(
+                    text = "📚 Smart Study Planner",
                     fontSize = 16.sp
                 )
             }
@@ -471,30 +461,21 @@ fun ProfileScreen() {
     }
 }
 
-
 /* ---------------- COMMON SCREEN ---------------- */
 
 @Composable
 fun SimpleScreen(
-
     icon: String,
-
     title: String,
-
     description: String
-
 ) {
 
     Column(
-
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7FB)),
-
         horizontalAlignment = Alignment.CenterHorizontally,
-
         verticalArrangement = Arrangement.Center
-
     ) {
 
         Text(
