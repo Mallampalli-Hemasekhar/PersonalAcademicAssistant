@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.NavigationBar
@@ -49,6 +51,7 @@ fun BottomNavScreen() {
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
                 items.forEachIndexed { index, item ->
+
                     NavigationBarItem(
                         selected = selectedItem == index,
                         onClick = { selectedItem = index },
@@ -221,7 +224,6 @@ fun ProfileScreen() {
     when (selectedFeature) {
 
         "Notes" -> {
-
             FeatureContainer(
                 buttonColor = Color(0xFF3F51B5),
                 onBack = { selectedFeature = "Profile" }
@@ -231,7 +233,6 @@ fun ProfileScreen() {
         }
 
         "GPA" -> {
-
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
                 onBack = { selectedFeature = "Profile" }
@@ -241,7 +242,6 @@ fun ProfileScreen() {
         }
 
         "StudyPlanner" -> {
-
             FeatureContainer(
                 buttonColor = Color(0xFFFF9800),
                 onBack = { selectedFeature = "Profile" }
@@ -251,7 +251,6 @@ fun ProfileScreen() {
         }
 
         "DailyGoals" -> {
-
             FeatureContainer(
                 buttonColor = Color(0xFF7B1FA2),
                 onBack = { selectedFeature = "Profile" }
@@ -260,15 +259,23 @@ fun ProfileScreen() {
             }
         }
 
-        // NEW: POMODORO STUDY TIMER
-
         "Pomodoro" -> {
-
             FeatureContainer(
                 buttonColor = Color(0xFFE64A19),
                 onBack = { selectedFeature = "Profile" }
             ) {
                 PomodoroScreen()
+            }
+        }
+
+        // NEW: NOTIFICATIONS AND REMINDERS
+
+        "Reminders" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { selectedFeature = "Profile" }
+            ) {
+                ReminderScreen()
             }
         }
 
@@ -278,6 +285,7 @@ fun ProfileScreen() {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color(0xFFF5F7FB))
+                    .verticalScroll(rememberScrollState())
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -350,8 +358,6 @@ fun ProfileScreen() {
                     Text("🎯 Daily Goals", fontSize = 16.sp)
                 }
 
-                // NEW: POMODORO BUTTON
-
                 Spacer(modifier = Modifier.height(15.dp))
 
                 Button(
@@ -363,6 +369,25 @@ fun ProfileScreen() {
                 ) {
                     Text("🍅 Pomodoro Study Timer", fontSize = 16.sp)
                 }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                // NEW: REMINDERS BUTTON
+
+                Button(
+                    onClick = { selectedFeature = "Reminders" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00897B)
+                    )
+                ) {
+                    Text(
+                        "🔔 Notifications & Reminders",
+                        fontSize = 16.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
             }
         }
     }
