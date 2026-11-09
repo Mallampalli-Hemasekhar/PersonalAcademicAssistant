@@ -260,6 +260,18 @@ fun ProfileScreen() {
             }
         }
 
+        // NEW: POMODORO STUDY TIMER
+
+        "Pomodoro" -> {
+
+            FeatureContainer(
+                buttonColor = Color(0xFFE64A19),
+                onBack = { selectedFeature = "Profile" }
+            ) {
+                PomodoroScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -336,6 +348,20 @@ fun ProfileScreen() {
                     )
                 ) {
                     Text("🎯 Daily Goals", fontSize = 16.sp)
+                }
+
+                // NEW: POMODORO BUTTON
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Button(
+                    onClick = { selectedFeature = "Pomodoro" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFE64A19)
+                    )
+                ) {
+                    Text("🍅 Pomodoro Study Timer", fontSize = 16.sp)
                 }
             }
         }
