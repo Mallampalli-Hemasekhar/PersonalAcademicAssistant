@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,7 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,27 +33,39 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun BottomNavScreen() {
 
-    var selectedItem by remember {
-        mutableIntStateOf(0)
-    }
+    var selectedTab by remember { mutableStateOf("Home") }
+    var selectedFeature by remember { mutableStateOf("Profile") }
 
-    val items = listOf(
-        "Home", "Schedule", "Tasks", "Progress", "Profile"
-    )
-
-    val icons = listOf(
-        "🏠", "📅", "✅", "📊", "👤"
+    val navItems = listOf(
+        "Home",
+        "Schedule",
+        "Tasks",
+        "Progress",
+        "Profile"
     )
 
     Scaffold(
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
-                items.forEachIndexed { index, item ->
+            NavigationBar {
+                navItems.forEach { item ->
+
                     NavigationBarItem(
-                        selected = selectedItem == index,
-                        onClick = { selectedItem = index },
+                        selected = selectedTab == item,
+                        onClick = {
+                            selectedTab = item
+                            selectedFeature = "Profile"
+                        },
                         icon = {
-                            Text(icons[index], fontSize = 20.sp)
+                            Text(
+                                text = when (item) {
+                                    "Home" -> "🏠"
+                                    "Schedule" -> "📅"
+                                    "Tasks" -> "📝"
+                                    "Progress" -> "📊"
+                                    else -> "👤"
+                                },
+                                fontSize = 20.sp
+                            )
                         },
                         label = {
                             Text(item)
@@ -64,167 +74,204 @@ fun BottomNavScreen() {
                 }
             }
         }
-    ) { innerPadding ->
+    ) { paddingValues ->
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color(0xFFF5F7FB)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+                .padding(paddingValues)
         ) {
-            when (selectedItem) {
-                0 -> DashboardScreen()
-                1 -> ScheduleScreen()
-                2 -> TasksScreen()
-                3 -> ProgressScreen()
-                4 -> ProfileScreen()
+
+            when (selectedTab) {
+
+                "Home" -> {
+                    DashboardScreen()
+                }
+
+                "Schedule" -> {
+                    ScheduleScreen()
+                }
+
+                "Tasks" -> {
+                    TasksScreen()
+                }
+
+                "Progress" -> {
+                    ProgressScreen()
+                }
+
+                "Profile" -> {
+                    ProfileScreen(
+                        selectedFeature = selectedFeature,
+                        onFeatureSelected = {
+                            selectedFeature = it
+                        }
+                    )
+                }
             }
         }
     }
 }
 
-/* ---------------- SCHEDULE SCREEN ---------------- */
+// --------------------------------------------------
+// SCHEDULE SCREEN
+// --------------------------------------------------
 
 @Composable
 fun ScheduleScreen() {
 
-    var showTimetable by remember {
-        mutableStateOf(true)
-    }
+    var selectedSchedule by remember { mutableStateOf("Timetable") }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7FB))
+            .padding(16.dp)
     ) {
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        Text(
+            text = "My Schedule",
+            fontSize = 25.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF172554)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                selectedSchedule = "Timetable"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedSchedule == "Timetable")
+                    Color(0xFF3F51B5)
+                else
+                    Color.Gray
+            )
         ) {
-
-            Button(
-                onClick = { showTimetable = true },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (showTimetable) {
-                        Color(0xFF3F51B5)
-                    } else {
-                        Color.LightGray
-                    }
-                )
-            ) {
-                Text("📅 Timetable", fontSize = 14.sp)
-            }
-
-            Button(
-                onClick = { showTimetable = false },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (!showTimetable) {
-                        Color(0xFF3F51B5)
-                    } else {
-                        Color.LightGray
-                    }
-                )
-            ) {
-                Text("📝 Exams", fontSize = 14.sp)
-            }
+            Text("📅 Timetable")
         }
 
-        if (showTimetable) {
-            TimetableScreen()
-        } else {
-            ExamScreen()
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                selectedSchedule = "Exams"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedSchedule == "Exams")
+                    Color(0xFF3F51B5)
+                else
+                    Color.Gray
+            )
+        ) {
+            Text("📝 Exams")
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        when (selectedSchedule) {
+            "Timetable" -> TimetableScreen()
+            "Exams" -> ExamScreen()
         }
     }
 }
 
-/* ---------------- TASKS SCREEN ---------------- */
+// --------------------------------------------------
+// TASKS SCREEN
+// --------------------------------------------------
 
 @Composable
 fun TasksScreen() {
     AssignmentScreen()
 }
 
-/* ---------------- PROGRESS SCREEN ---------------- */
+// --------------------------------------------------
+// PROGRESS SCREEN
+// --------------------------------------------------
 
 @Composable
 fun ProgressScreen() {
 
-    var showAnalytics by remember {
-        mutableStateOf(false)
+    var selectedProgress by remember {
+        mutableStateOf("Attendance")
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F7FB))
+            .padding(16.dp)
     ) {
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        Text(
+            text = "My Progress",
+            fontSize = 25.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF172554)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                selectedProgress = "Attendance"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedProgress == "Attendance")
+                    Color(0xFF3F51B5)
+                else
+                    Color.Gray
+            )
         ) {
-
-            Button(
-                onClick = { showAnalytics = false },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (!showAnalytics) {
-                        Color(0xFF3F51B5)
-                    } else {
-                        Color.LightGray
-                    }
-                )
-            ) {
-                Text("📊 Attendance")
-            }
-
-            Button(
-                onClick = { showAnalytics = true },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (showAnalytics) {
-                        Color(0xFF00897B)
-                    } else {
-                        Color.LightGray
-                    }
-                )
-            ) {
-                Text("📈 Analytics")
-            }
+            Text("📊 Attendance")
         }
 
-        if (showAnalytics) {
-            PerformanceAnalyticsScreen()
-        } else {
-            AttendanceScreen()
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = {
+                selectedProgress = "Performance"
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (selectedProgress == "Performance")
+                    Color(0xFF3F51B5)
+                else
+                    Color.Gray
+            )
+        ) {
+            Text("📈 Performance Analytics")
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        when (selectedProgress) {
+            "Attendance" -> AttendanceScreen()
+            "Performance" -> PerformanceAnalyticsScreen()
         }
     }
 }
 
-/* ---------------- PROFILE SCREEN ---------------- */
+// --------------------------------------------------
+// PROFILE SCREEN AND FEATURE NAVIGATION
+// --------------------------------------------------
 
 @Composable
-fun ProfileScreen() {
-
-    var selectedFeature by remember {
-        mutableStateOf("Profile")
-    }
+fun ProfileScreen(
+    selectedFeature: String,
+    onFeatureSelected: (String) -> Unit
+) {
 
     when (selectedFeature) {
 
         "Notes" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF3F51B5),
-                onBack = { selectedFeature = "Profile" }
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 NotesScreen()
             }
@@ -233,7 +280,7 @@ fun ProfileScreen() {
         "GPA" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
-                onBack = { selectedFeature = "Profile" }
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 GPAScreen()
             }
@@ -241,8 +288,8 @@ fun ProfileScreen() {
 
         "StudyPlanner" -> {
             FeatureContainer(
-                buttonColor = Color(0xFFFF9800),
-                onBack = { selectedFeature = "Profile" }
+                buttonColor = Color(0xFF5E35B1),
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 StudyPlannerScreen()
             }
@@ -250,8 +297,8 @@ fun ProfileScreen() {
 
         "DailyGoals" -> {
             FeatureContainer(
-                buttonColor = Color(0xFF7B1FA2),
-                onBack = { selectedFeature = "Profile" }
+                buttonColor = Color(0xFF039BE5),
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 DailyGoalsScreen()
             }
@@ -259,8 +306,8 @@ fun ProfileScreen() {
 
         "Pomodoro" -> {
             FeatureContainer(
-                buttonColor = Color(0xFFE64A19),
-                onBack = { selectedFeature = "Profile" }
+                buttonColor = Color(0xFFE53935),
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 PomodoroScreen()
             }
@@ -268,32 +315,38 @@ fun ProfileScreen() {
 
         "Reminders" -> {
             FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { selectedFeature = "Profile" }
+                buttonColor = Color(0xFFFB8C00),
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 ReminderScreen()
             }
         }
 
-        // AI ACADEMIC ASSISTANT
-
         "AIAssistant" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF3949AB),
-                onBack = { selectedFeature = "Profile" }
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 AIAssistantScreen()
             }
         }
 
-        // FEATURE 18: AI QUIZ GENERATOR
-
         "QuizGenerator" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF7B1FA2),
-                onBack = { selectedFeature = "Profile" }
+                onBack = { onFeatureSelected("Profile") }
             ) {
                 QuizGeneratorScreen()
+            }
+        }
+
+        // FEATURE 19: AI FLASHCARD GENERATOR
+        "Flashcards" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                FlashcardScreen()
             }
         }
 
@@ -309,132 +362,84 @@ fun ProfileScreen() {
             ) {
 
                 Text(
-                    text = "👤",
-                    fontSize = 55.sp
-                )
-
-                Text(
-                    text = "Profile",
-                    fontSize = 28.sp,
+                    text = "My Profile",
+                    fontSize = 27.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF172554)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "Manage your student profile and academic information.",
-                    fontSize = 16.sp,
+                    text = "Personal Academic Assistant",
+                    fontSize = 15.sp,
                     color = Color.Gray
                 )
 
-                Spacer(modifier = Modifier.height(30.dp))
+                Spacer(modifier = Modifier.height(25.dp))
 
-                Button(
-                    onClick = { selectedFeature = "Notes" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3F51B5)
-                    )
+                ProfileButton(
+                    text = "📚 Academic Notes",
+                    color = Color(0xFF3F51B5)
                 ) {
-                    Text("📒 Academic Notes", fontSize = 16.sp)
+                    onFeatureSelected("Notes")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                Button(
-                    onClick = { selectedFeature = "GPA" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00897B)
-                    )
+                ProfileButton(
+                    text = "🎓 GPA / CGPA Calculator",
+                    color = Color(0xFF00897B)
                 ) {
-                    Text("🎓 GPA / CGPA Calculator", fontSize = 16.sp)
+                    onFeatureSelected("GPA")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                Button(
-                    onClick = { selectedFeature = "StudyPlanner" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF9800)
-                    )
+                ProfileButton(
+                    text = "📅 Smart Study Planner",
+                    color = Color(0xFF5E35B1)
                 ) {
-                    Text("📚 Smart Study Planner", fontSize = 16.sp)
+                    onFeatureSelected("StudyPlanner")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                Button(
-                    onClick = { selectedFeature = "DailyGoals" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF7B1FA2)
-                    )
+                ProfileButton(
+                    text = "🎯 Daily Goals",
+                    color = Color(0xFF039BE5)
                 ) {
-                    Text("🎯 Daily Goals", fontSize = 16.sp)
+                    onFeatureSelected("DailyGoals")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                Button(
-                    onClick = { selectedFeature = "Pomodoro" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFE64A19)
-                    )
+                ProfileButton(
+                    text = "⏱️ Pomodoro Study Timer",
+                    color = Color(0xFFE53935)
                 ) {
-                    Text("🍅 Pomodoro Study Timer", fontSize = 16.sp)
+                    onFeatureSelected("Pomodoro")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                Button(
-                    onClick = { selectedFeature = "Reminders" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00897B)
-                    )
+                ProfileButton(
+                    text = "🔔 Notifications & Reminders",
+                    color = Color(0xFFFB8C00)
                 ) {
-                    Text(
-                        "🔔 Notifications & Reminders",
-                        fontSize = 16.sp
-                    )
+                    onFeatureSelected("Reminders")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                // AI ASSISTANT BUTTON
-
-                Button(
-                    onClick = { selectedFeature = "AIAssistant" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3949AB)
-                    )
+                ProfileButton(
+                    text = "🤖 AI Academic Assistant",
+                    color = Color(0xFF3949AB)
                 ) {
-                    Text(
-                        "🤖 AI Academic Assistant",
-                        fontSize = 16.sp
-                    )
+                    onFeatureSelected("AIAssistant")
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
-
-                // FEATURE 18 BUTTON
-
-                Button(
-                    onClick = { selectedFeature = "QuizGenerator" },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF7B1FA2)
-                    )
+                ProfileButton(
+                    text = "📝 AI Quiz Generator",
+                    color = Color(0xFF7B1FA2)
                 ) {
-                    Text(
-                        "📝 AI Quiz Generator",
-                        fontSize = 16.sp
-                    )
+                    onFeatureSelected("QuizGenerator")
+                }
+
+                // FEATURE 19 BUTTON
+                ProfileButton(
+                    text = "📚 AI Flashcard Generator",
+                    color = Color(0xFF00897B)
+                ) {
+                    onFeatureSelected("Flashcards")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -443,7 +448,36 @@ fun ProfileScreen() {
     }
 }
 
-/* ---------------- REUSABLE FEATURE CONTAINER ---------------- */
+// --------------------------------------------------
+// REUSABLE PROFILE BUTTON
+// --------------------------------------------------
+
+@Composable
+fun ProfileButton(
+    text: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 7.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = color
+        )
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp
+        )
+    }
+}
+
+// --------------------------------------------------
+// REUSABLE FEATURE CONTAINER
+// --------------------------------------------------
 
 @Composable
 fun FeatureContainer(
@@ -460,13 +494,7 @@ fun FeatureContainer(
 
         Button(
             onClick = onBack,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = 12.dp
-                ),
+            modifier = Modifier.padding(12.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = buttonColor
             )
@@ -481,39 +509,5 @@ fun FeatureContainer(
         ) {
             content()
         }
-    }
-}
-
-/* ---------------- COMMON SCREEN ---------------- */
-
-@Composable
-fun SimpleScreen(
-    icon: String,
-    title: String,
-    description: String
-) {
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F7FB)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-
-        Text(icon, fontSize = 55.sp)
-
-        Text(
-            title,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
-        )
-
-        Text(
-            description,
-            fontSize = 16.sp,
-            color = Color.Gray
-        )
     }
 }
