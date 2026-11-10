@@ -51,7 +51,6 @@ fun BottomNavScreen() {
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
                 items.forEachIndexed { index, item ->
-
                     NavigationBarItem(
                         selected = selectedItem == index,
                         onClick = { selectedItem = index },
@@ -75,7 +74,6 @@ fun BottomNavScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-
             when (selectedItem) {
                 0 -> DashboardScreen()
                 1 -> ScheduleScreen()
@@ -268,14 +266,23 @@ fun ProfileScreen() {
             }
         }
 
-        // NEW: NOTIFICATIONS AND REMINDERS
-
         "Reminders" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
                 onBack = { selectedFeature = "Profile" }
             ) {
                 ReminderScreen()
+            }
+        }
+
+        // NEW: AI ACADEMIC ASSISTANT
+
+        "AIAssistant" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF3949AB),
+                onBack = { selectedFeature = "Profile" }
+            ) {
+                AIAssistantScreen()
             }
         }
 
@@ -372,8 +379,6 @@ fun ProfileScreen() {
 
                 Spacer(modifier = Modifier.height(15.dp))
 
-                // NEW: REMINDERS BUTTON
-
                 Button(
                     onClick = { selectedFeature = "Reminders" },
                     modifier = Modifier.fillMaxWidth(),
@@ -383,6 +388,23 @@ fun ProfileScreen() {
                 ) {
                     Text(
                         "🔔 Notifications & Reminders",
+                        fontSize = 16.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                // NEW AI ASSISTANT BUTTON
+
+                Button(
+                    onClick = { selectedFeature = "AIAssistant" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF3949AB)
+                    )
+                ) {
+                    Text(
+                        "🤖 AI Academic Assistant",
                         fontSize = 16.sp
                     )
                 }

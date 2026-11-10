@@ -56,7 +56,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-ai")
+    implementation("com.google.firebase:firebase-appcheck-debug")
 
     // Firebase Authentication and Firestore
     implementation("com.google.firebase:firebase-auth")

@@ -32,26 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.personalacademicassistant.ui.theme.PersonalAcademicAssistantTheme
 
-// Firebase imports
-import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Initialize Firebase
-        FirebaseApp.initializeApp(this)
-
-        // Activate App Check Debug Provider for development
-        if (BuildConfig.DEBUG) {
-            FirebaseAppCheck.getInstance()
-                .installAppCheckProviderFactory(
-                    DebugAppCheckProviderFactory.getInstance()
-                )
-        }
 
         setContent {
             PersonalAcademicAssistantTheme {
@@ -69,6 +53,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 // SCREEN NAVIGATION
+
                 if (showDashboard) {
 
                     BottomNavScreen()
@@ -112,11 +97,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/*
-=========================================================
-WELCOME SCREEN
-=========================================================
-*/
+/* ---------------- WELCOME SCREEN ---------------- */
 
 @Composable
 fun WelcomeScreen(
@@ -135,6 +116,7 @@ fun WelcomeScreen(
     ) {
 
         // APP LOGO
+
         Column(
             modifier = Modifier
                 .size(110.dp)
@@ -157,6 +139,7 @@ fun WelcomeScreen(
         )
 
         // APP NAME
+
         Text(
             text = "Personal Academic",
             fontSize = 28.sp,
@@ -178,6 +161,7 @@ fun WelcomeScreen(
         )
 
         // DESCRIPTION
+
         Text(
             text = "Your smart academic companion\nfor managing your student life.",
             fontSize = 16.sp,
@@ -191,6 +175,7 @@ fun WelcomeScreen(
         )
 
         // GET STARTED BUTTON
+
         Button(
             onClick = {
                 onGetStartedClick()
