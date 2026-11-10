@@ -1,3 +1,4 @@
+
 package com.example.personalacademicassistant
 
 import android.os.Bundle
@@ -31,10 +32,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.personalacademicassistant.ui.theme.PersonalAcademicAssistantTheme
 
+// Firebase imports
+import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Firebase
+        FirebaseApp.initializeApp(this)
+
+        // Activate App Check Debug Provider for development
+        if (BuildConfig.DEBUG) {
+            FirebaseAppCheck.getInstance()
+                .installAppCheckProviderFactory(
+                    DebugAppCheckProviderFactory.getInstance()
+                )
+        }
 
         setContent {
             PersonalAcademicAssistantTheme {

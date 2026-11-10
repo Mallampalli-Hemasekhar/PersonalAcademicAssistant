@@ -39,11 +39,13 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
 
+    // Jetpack Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
@@ -53,14 +55,21 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
-    // Firebase
+    // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+
+    // Firebase Authentication and Firestore
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 
+    // Firebase App Check Debug Provider
+    implementation("com.google.firebase:firebase-appcheck-debug")
+
+    // Firebase AI Logic - Gemini
+    implementation("com.google.firebase:firebase-ai")
+
     // WorkManager - Notifications and Reminders
     implementation("androidx.work:work-runtime-ktx:2.10.1")
-    implementation("androidx.core:core-ktx:1.17.0")
 
     // Testing
     testImplementation(libs.junit)
