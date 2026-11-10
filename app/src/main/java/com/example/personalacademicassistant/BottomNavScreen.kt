@@ -275,7 +275,7 @@ fun ProfileScreen() {
             }
         }
 
-        // NEW: AI ACADEMIC ASSISTANT
+        // AI ACADEMIC ASSISTANT
 
         "AIAssistant" -> {
             FeatureContainer(
@@ -283,6 +283,17 @@ fun ProfileScreen() {
                 onBack = { selectedFeature = "Profile" }
             ) {
                 AIAssistantScreen()
+            }
+        }
+
+        // FEATURE 18: AI QUIZ GENERATOR
+
+        "QuizGenerator" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF7B1FA2),
+                onBack = { selectedFeature = "Profile" }
+            ) {
+                QuizGeneratorScreen()
             }
         }
 
@@ -394,7 +405,7 @@ fun ProfileScreen() {
 
                 Spacer(modifier = Modifier.height(15.dp))
 
-                // NEW AI ASSISTANT BUTTON
+                // AI ASSISTANT BUTTON
 
                 Button(
                     onClick = { selectedFeature = "AIAssistant" },
@@ -405,6 +416,23 @@ fun ProfileScreen() {
                 ) {
                     Text(
                         "🤖 AI Academic Assistant",
+                        fontSize = 16.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                // FEATURE 18 BUTTON
+
+                Button(
+                    onClick = { selectedFeature = "QuizGenerator" },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF7B1FA2)
+                    )
+                ) {
+                    Text(
+                        "📝 AI Quiz Generator",
                         fontSize = 16.sp
                     )
                 }
