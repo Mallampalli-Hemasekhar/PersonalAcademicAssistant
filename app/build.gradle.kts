@@ -83,4 +83,6 @@ dependencies {
     // Debug
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 }

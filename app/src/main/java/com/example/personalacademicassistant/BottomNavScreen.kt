@@ -120,7 +120,9 @@ fun BottomNavScreen() {
 @Composable
 fun ScheduleScreen() {
 
-    var selectedSchedule by remember { mutableStateOf("Timetable") }
+    var selectedSchedule by remember {
+        mutableStateOf("Timetable")
+    }
 
     Column(
         modifier = Modifier
@@ -350,6 +352,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 20: AI PDF STUDY SUMMARIZER
+        "PDFSummarizer" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF1565C0),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                PDFSummarizerScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -440,6 +452,14 @@ fun ProfileScreen(
                     color = Color(0xFF00897B)
                 ) {
                     onFeatureSelected("Flashcards")
+                }
+
+                // FEATURE 20 BUTTON
+                ProfileButton(
+                    text = "📄 AI PDF Study Summarizer",
+                    color = Color(0xFF1565C0)
+                ) {
+                    onFeatureSelected("PDFSummarizer")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
