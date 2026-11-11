@@ -362,6 +362,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 21: STUDY STREAKS AND ACHIEVEMENTS
+        "StudyStreaks" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFFFF7043),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                StudyStreakScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -460,6 +470,14 @@ fun ProfileScreen(
                     color = Color(0xFF1565C0)
                 ) {
                     onFeatureSelected("PDFSummarizer")
+                }
+
+                // FEATURE 21 BUTTON
+                ProfileButton(
+                    text = "🔥 Study Streaks & Achievements",
+                    color = Color(0xFFFF7043)
+                ) {
+                    onFeatureSelected("StudyStreaks")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
