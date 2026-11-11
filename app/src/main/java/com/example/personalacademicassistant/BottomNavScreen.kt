@@ -84,21 +84,13 @@ fun BottomNavScreen() {
 
             when (selectedTab) {
 
-                "Home" -> {
-                    DashboardScreen()
-                }
+                "Home" -> DashboardScreen()
 
-                "Schedule" -> {
-                    ScheduleScreen()
-                }
+                "Schedule" -> ScheduleScreen()
 
-                "Tasks" -> {
-                    TasksScreen()
-                }
+                "Tasks" -> TasksScreen()
 
-                "Progress" -> {
-                    ProgressScreen()
-                }
+                "Progress" -> ProgressScreen()
 
                 "Profile" -> {
                     ProfileScreen(
@@ -382,6 +374,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 23: PREVIOUS QUESTION PAPER MANAGER
+        "PreviousQuestionPapers" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF3949AB),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                PreviousQuestionPaperScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -466,7 +468,6 @@ fun ProfileScreen(
                     onFeatureSelected("QuizGenerator")
                 }
 
-                // FEATURE 19 BUTTON
                 ProfileButton(
                     text = "📚 AI Flashcard Generator",
                     color = Color(0xFF00897B)
@@ -474,7 +475,6 @@ fun ProfileScreen(
                     onFeatureSelected("Flashcards")
                 }
 
-                // FEATURE 20 BUTTON
                 ProfileButton(
                     text = "📄 AI PDF Study Summarizer",
                     color = Color(0xFF1565C0)
@@ -482,7 +482,6 @@ fun ProfileScreen(
                     onFeatureSelected("PDFSummarizer")
                 }
 
-                // FEATURE 21 BUTTON
                 ProfileButton(
                     text = "🔥 Study Streaks & Achievements",
                     color = Color(0xFFFF7043)
@@ -490,12 +489,19 @@ fun ProfileScreen(
                     onFeatureSelected("StudyStreaks")
                 }
 
-                // FEATURE 22 BUTTON
                 ProfileButton(
                     text = "📚 Academic Resource Manager",
                     color = Color(0xFF00897B)
                 ) {
                     onFeatureSelected("AcademicResources")
+                }
+
+                // FEATURE 23 BUTTON
+                ProfileButton(
+                    text = "📄 Previous Question Paper Manager",
+                    color = Color(0xFF3949AB)
+                ) {
+                    onFeatureSelected("PreviousQuestionPapers")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
