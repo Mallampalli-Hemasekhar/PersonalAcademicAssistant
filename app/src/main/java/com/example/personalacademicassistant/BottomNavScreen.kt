@@ -372,6 +372,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 22: ACADEMIC RESOURCE MANAGER
+        "AcademicResources" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                AcademicResourceScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -478,6 +488,14 @@ fun ProfileScreen(
                     color = Color(0xFFFF7043)
                 ) {
                     onFeatureSelected("StudyStreaks")
+                }
+
+                // FEATURE 22 BUTTON
+                ProfileButton(
+                    text = "📚 Academic Resource Manager",
+                    color = Color(0xFF00897B)
+                ) {
+                    onFeatureSelected("AcademicResources")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
