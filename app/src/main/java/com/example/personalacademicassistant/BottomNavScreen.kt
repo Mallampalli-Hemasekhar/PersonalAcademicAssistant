@@ -394,6 +394,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 25: AI STUDY TIMETABLE GENERATOR
+        "AIStudyTimetable" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF5E35B1),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                AIStudyTimetableScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -519,6 +529,14 @@ fun ProfileScreen(
                     color = Color(0xFF00897B)
                 ) {
                     onFeatureSelected("SemesterProgress")
+                }
+
+                // FEATURE 25 BUTTON
+                ProfileButton(
+                    text = "🤖 AI Study Timetable Generator",
+                    color = Color(0xFF5E35B1)
+                ) {
+                    onFeatureSelected("AIStudyTimetable")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
