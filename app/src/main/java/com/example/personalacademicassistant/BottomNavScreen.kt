@@ -48,7 +48,6 @@ fun BottomNavScreen() {
         bottomBar = {
             NavigationBar {
                 navItems.forEach { item ->
-
                     NavigationBarItem(
                         selected = selectedTab == item,
                         onClick = {
@@ -404,6 +403,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 26: STUDY BUDDY AND COLLABORATION
+        "StudyBuddy" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                StudyBuddyScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -537,6 +546,14 @@ fun ProfileScreen(
                     color = Color(0xFF5E35B1)
                 ) {
                     onFeatureSelected("AIStudyTimetable")
+                }
+
+                // FEATURE 26 BUTTON
+                ProfileButton(
+                    text = "👥 Study Buddy & Collaboration",
+                    color = Color(0xFF00897B)
+                ) {
+                    onFeatureSelected("StudyBuddy")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
