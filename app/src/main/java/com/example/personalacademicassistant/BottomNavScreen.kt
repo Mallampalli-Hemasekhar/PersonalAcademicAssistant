@@ -384,6 +384,16 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 24: SEMESTER PROGRESS TRACKER
+        "SemesterProgress" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                SemesterProgressScreen()
+            }
+        }
+
         else -> {
 
             Column(
@@ -496,12 +506,19 @@ fun ProfileScreen(
                     onFeatureSelected("AcademicResources")
                 }
 
-                // FEATURE 23 BUTTON
                 ProfileButton(
                     text = "📄 Previous Question Paper Manager",
                     color = Color(0xFF3949AB)
                 ) {
                     onFeatureSelected("PreviousQuestionPapers")
+                }
+
+                // FEATURE 24 BUTTON
+                ProfileButton(
+                    text = "📊 Semester Progress Tracker",
+                    color = Color(0xFF00897B)
+                ) {
+                    onFeatureSelected("SemesterProgress")
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
