@@ -346,6 +346,17 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 29: AI ASSIGNMENT HELPER
+
+        "AIAssignmentHelper" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF00897B),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                AIAssignmentHelperScreen()
+            }
+        }
+
         "QuizGenerator" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF7B1FA2),
@@ -536,6 +547,15 @@ fun ProfileScreen(
                     color = Color(0xFF1565C0)
                 ) {
                     onFeatureSelected("AICodeExplainer")
+                }
+
+                // FEATURE 29 BUTTON
+
+                ProfileButton(
+                    text = "📝 AI Assignment Helper",
+                    color = Color(0xFF00897B)
+                ) {
+                    onFeatureSelected("AIAssignmentHelper")
                 }
 
                 ProfileButton(
