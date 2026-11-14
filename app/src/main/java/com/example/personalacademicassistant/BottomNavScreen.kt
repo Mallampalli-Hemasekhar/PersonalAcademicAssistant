@@ -1,4 +1,3 @@
-
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
@@ -324,6 +323,17 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 27: AI ACADEMIC DOUBT SOLVER
+
+        "AIDoubtSolver" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF5E35B1),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                AIDoubtSolverScreen()
+            }
+        }
+
         "QuizGenerator" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF7B1FA2),
@@ -334,6 +344,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 19: AI FLASHCARD GENERATOR
+
         "Flashcards" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
@@ -344,6 +355,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 20: AI PDF STUDY SUMMARIZER
+
         "PDFSummarizer" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF1565C0),
@@ -354,6 +366,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 21: STUDY STREAKS AND ACHIEVEMENTS
+
         "StudyStreaks" -> {
             FeatureContainer(
                 buttonColor = Color(0xFFFF7043),
@@ -364,6 +377,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 22: ACADEMIC RESOURCE MANAGER
+
         "AcademicResources" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
@@ -374,6 +388,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 23: PREVIOUS QUESTION PAPER MANAGER
+
         "PreviousQuestionPapers" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF3949AB),
@@ -384,6 +399,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 24: SEMESTER PROGRESS TRACKER
+
         "SemesterProgress" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
@@ -394,6 +410,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 25: AI STUDY TIMETABLE GENERATOR
+
         "AIStudyTimetable" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF5E35B1),
@@ -404,6 +421,7 @@ fun ProfileScreen(
         }
 
         // FEATURE 26: STUDY BUDDY AND COLLABORATION
+
         "StudyBuddy" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF00897B),
@@ -490,6 +508,15 @@ fun ProfileScreen(
                     onFeatureSelected("AIAssistant")
                 }
 
+                // FEATURE 27 BUTTON
+
+                ProfileButton(
+                    text = "💡 AI Academic Doubt Solver",
+                    color = Color(0xFF5E35B1)
+                ) {
+                    onFeatureSelected("AIDoubtSolver")
+                }
+
                 ProfileButton(
                     text = "📝 AI Quiz Generator",
                     color = Color(0xFF7B1FA2)
@@ -533,6 +560,7 @@ fun ProfileScreen(
                 }
 
                 // FEATURE 24 BUTTON
+
                 ProfileButton(
                     text = "📊 Semester Progress Tracker",
                     color = Color(0xFF00897B)
@@ -541,6 +569,7 @@ fun ProfileScreen(
                 }
 
                 // FEATURE 25 BUTTON
+
                 ProfileButton(
                     text = "🤖 AI Study Timetable Generator",
                     color = Color(0xFF5E35B1)
@@ -549,6 +578,7 @@ fun ProfileScreen(
                 }
 
                 // FEATURE 26 BUTTON
+
                 ProfileButton(
                     text = "👥 Study Buddy & Collaboration",
                     color = Color(0xFF00897B)
