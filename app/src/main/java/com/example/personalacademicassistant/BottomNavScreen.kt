@@ -80,7 +80,6 @@ fun BottomNavScreen() {
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-
             when (selectedTab) {
 
                 "Home" -> DashboardScreen()
@@ -262,194 +261,163 @@ fun ProfileScreen(
     when (selectedFeature) {
 
         "Notes" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF3F51B5),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF3F51B5), {
+                onFeatureSelected("Profile")
+            }) {
                 NotesScreen()
             }
         }
 
         "GPA" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF00897B), {
+                onFeatureSelected("Profile")
+            }) {
                 GPAScreen()
             }
         }
 
         "StudyPlanner" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF5E35B1),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF5E35B1), {
+                onFeatureSelected("Profile")
+            }) {
                 StudyPlannerScreen()
             }
         }
 
         "DailyGoals" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF039BE5),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF039BE5), {
+                onFeatureSelected("Profile")
+            }) {
                 DailyGoalsScreen()
             }
         }
 
         "Pomodoro" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFFE53935),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFFE53935), {
+                onFeatureSelected("Profile")
+            }) {
                 PomodoroScreen()
             }
         }
 
         "Reminders" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFFFB8C00),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFFFB8C00), {
+                onFeatureSelected("Profile")
+            }) {
                 ReminderScreen()
             }
         }
 
         "AIAssistant" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF3949AB),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF3949AB), {
+                onFeatureSelected("Profile")
+            }) {
                 AIAssistantScreen()
             }
         }
 
-        // FEATURE 27: AI ACADEMIC DOUBT SOLVER
-
         "AIDoubtSolver" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF5E35B1),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF5E35B1), {
+                onFeatureSelected("Profile")
+            }) {
                 AIDoubtSolverScreen()
             }
         }
 
-        // FEATURE 28: AI CODE EXPLAINER
-
         "AICodeExplainer" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF1565C0),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF1565C0), {
+                onFeatureSelected("Profile")
+            }) {
                 AICodeExplainerScreen()
             }
         }
 
-        // FEATURE 29: AI ASSIGNMENT HELPER
-
         "AIAssignmentHelper" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF00897B), {
+                onFeatureSelected("Profile")
+            }) {
                 AIAssignmentHelperScreen()
             }
         }
 
+        // FEATURE 30: AI MOCK INTERVIEW
+
+        "AIMockInterview" -> {
+            FeatureContainer(Color(0xFF3949AB), {
+                onFeatureSelected("Profile")
+            }) {
+                AIMockInterviewScreen()
+            }
+        }
+
         "QuizGenerator" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF7B1FA2),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF7B1FA2), {
+                onFeatureSelected("Profile")
+            }) {
                 QuizGeneratorScreen()
             }
         }
 
-        // FEATURE 19: AI FLASHCARD GENERATOR
-
         "Flashcards" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF00897B), {
+                onFeatureSelected("Profile")
+            }) {
                 FlashcardScreen()
             }
         }
 
-        // FEATURE 20: AI PDF STUDY SUMMARIZER
-
         "PDFSummarizer" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF1565C0),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF1565C0), {
+                onFeatureSelected("Profile")
+            }) {
                 PDFSummarizerScreen()
             }
         }
 
-        // FEATURE 21: STUDY STREAKS AND ACHIEVEMENTS
-
         "StudyStreaks" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFFFF7043),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFFFF7043), {
+                onFeatureSelected("Profile")
+            }) {
                 StudyStreakScreen()
             }
         }
 
-        // FEATURE 22: ACADEMIC RESOURCE MANAGER
-
         "AcademicResources" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF00897B), {
+                onFeatureSelected("Profile")
+            }) {
                 AcademicResourceScreen()
             }
         }
 
-        // FEATURE 23: PREVIOUS QUESTION PAPER MANAGER
-
         "PreviousQuestionPapers" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF3949AB),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF3949AB), {
+                onFeatureSelected("Profile")
+            }) {
                 PreviousQuestionPaperScreen()
             }
         }
 
-        // FEATURE 24: SEMESTER PROGRESS TRACKER
-
         "SemesterProgress" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF00897B), {
+                onFeatureSelected("Profile")
+            }) {
                 SemesterProgressScreen()
             }
         }
 
-        // FEATURE 25: AI STUDY TIMETABLE GENERATOR
-
         "AIStudyTimetable" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF5E35B1),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF5E35B1), {
+                onFeatureSelected("Profile")
+            }) {
                 AIStudyTimetableScreen()
             }
         }
 
-        // FEATURE 26: STUDY BUDDY AND COLLABORATION
-
         "StudyBuddy" -> {
-            FeatureContainer(
-                buttonColor = Color(0xFF00897B),
-                onBack = { onFeatureSelected("Profile") }
-            ) {
+            FeatureContainer(Color(0xFF00897B), {
+                onFeatureSelected("Profile")
+            }) {
                 StudyBuddyScreen()
             }
         }
@@ -482,148 +450,83 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(25.dp))
 
-                ProfileButton(
-                    text = "📚 Academic Notes",
-                    color = Color(0xFF3F51B5)
-                ) {
+                ProfileButton("📚 Academic Notes", Color(0xFF3F51B5)) {
                     onFeatureSelected("Notes")
                 }
 
-                ProfileButton(
-                    text = "🎓 GPA / CGPA Calculator",
-                    color = Color(0xFF00897B)
-                ) {
+                ProfileButton("🎓 GPA / CGPA Calculator", Color(0xFF00897B)) {
                     onFeatureSelected("GPA")
                 }
 
-                ProfileButton(
-                    text = "📅 Smart Study Planner",
-                    color = Color(0xFF5E35B1)
-                ) {
+                ProfileButton("📅 Smart Study Planner", Color(0xFF5E35B1)) {
                     onFeatureSelected("StudyPlanner")
                 }
 
-                ProfileButton(
-                    text = "🎯 Daily Goals",
-                    color = Color(0xFF039BE5)
-                ) {
+                ProfileButton("🎯 Daily Goals", Color(0xFF039BE5)) {
                     onFeatureSelected("DailyGoals")
                 }
 
-                ProfileButton(
-                    text = "⏱️ Pomodoro Study Timer",
-                    color = Color(0xFFE53935)
-                ) {
+                ProfileButton("⏱️ Pomodoro Study Timer", Color(0xFFE53935)) {
                     onFeatureSelected("Pomodoro")
                 }
 
-                ProfileButton(
-                    text = "🔔 Notifications & Reminders",
-                    color = Color(0xFFFB8C00)
-                ) {
+                ProfileButton("🔔 Notifications & Reminders", Color(0xFFFB8C00)) {
                     onFeatureSelected("Reminders")
                 }
 
-                ProfileButton(
-                    text = "🤖 AI Academic Assistant",
-                    color = Color(0xFF3949AB)
-                ) {
+                ProfileButton("🤖 AI Academic Assistant", Color(0xFF3949AB)) {
                     onFeatureSelected("AIAssistant")
                 }
 
-                // FEATURE 27 BUTTON
-
-                ProfileButton(
-                    text = "💡 AI Academic Doubt Solver",
-                    color = Color(0xFF5E35B1)
-                ) {
+                ProfileButton("💡 AI Academic Doubt Solver", Color(0xFF5E35B1)) {
                     onFeatureSelected("AIDoubtSolver")
                 }
 
-                // FEATURE 28 BUTTON
-
-                ProfileButton(
-                    text = "💻 AI Code Explainer",
-                    color = Color(0xFF1565C0)
-                ) {
+                ProfileButton("💻 AI Code Explainer", Color(0xFF1565C0)) {
                     onFeatureSelected("AICodeExplainer")
                 }
 
-                // FEATURE 29 BUTTON
-
-                ProfileButton(
-                    text = "📝 AI Assignment Helper",
-                    color = Color(0xFF00897B)
-                ) {
+                ProfileButton("📝 AI Assignment Helper", Color(0xFF00897B)) {
                     onFeatureSelected("AIAssignmentHelper")
                 }
 
-                ProfileButton(
-                    text = "📝 AI Quiz Generator",
-                    color = Color(0xFF7B1FA2)
-                ) {
+                ProfileButton("🎤 AI Mock Interview", Color(0xFF3949AB)) {
+                    onFeatureSelected("AIMockInterview")
+                }
+
+                ProfileButton("📝 AI Quiz Generator", Color(0xFF7B1FA2)) {
                     onFeatureSelected("QuizGenerator")
                 }
 
-                ProfileButton(
-                    text = "📚 AI Flashcard Generator",
-                    color = Color(0xFF00897B)
-                ) {
+                ProfileButton("📚 AI Flashcard Generator", Color(0xFF00897B)) {
                     onFeatureSelected("Flashcards")
                 }
 
-                ProfileButton(
-                    text = "📄 AI PDF Study Summarizer",
-                    color = Color(0xFF1565C0)
-                ) {
+                ProfileButton("📄 AI PDF Study Summarizer", Color(0xFF1565C0)) {
                     onFeatureSelected("PDFSummarizer")
                 }
 
-                ProfileButton(
-                    text = "🔥 Study Streaks & Achievements",
-                    color = Color(0xFFFF7043)
-                ) {
+                ProfileButton("🔥 Study Streaks & Achievements", Color(0xFFFF7043)) {
                     onFeatureSelected("StudyStreaks")
                 }
 
-                ProfileButton(
-                    text = "📚 Academic Resource Manager",
-                    color = Color(0xFF00897B)
-                ) {
+                ProfileButton("📚 Academic Resource Manager", Color(0xFF00897B)) {
                     onFeatureSelected("AcademicResources")
                 }
 
-                ProfileButton(
-                    text = "📄 Previous Question Paper Manager",
-                    color = Color(0xFF3949AB)
-                ) {
+                ProfileButton("📄 Previous Question Paper Manager", Color(0xFF3949AB)) {
                     onFeatureSelected("PreviousQuestionPapers")
                 }
 
-                // FEATURE 24 BUTTON
-
-                ProfileButton(
-                    text = "📊 Semester Progress Tracker",
-                    color = Color(0xFF00897B)
-                ) {
+                ProfileButton("📊 Semester Progress Tracker", Color(0xFF00897B)) {
                     onFeatureSelected("SemesterProgress")
                 }
 
-                // FEATURE 25 BUTTON
-
-                ProfileButton(
-                    text = "🤖 AI Study Timetable Generator",
-                    color = Color(0xFF5E35B1)
-                ) {
+                ProfileButton("🤖 AI Study Timetable Generator", Color(0xFF5E35B1)) {
                     onFeatureSelected("AIStudyTimetable")
                 }
 
-                // FEATURE 26 BUTTON
-
-                ProfileButton(
-                    text = "👥 Study Buddy & Collaboration",
-                    color = Color(0xFF00897B)
-                ) {
+                ProfileButton("👥 Study Buddy & Collaboration", Color(0xFF00897B)) {
                     onFeatureSelected("StudyBuddy")
                 }
 
