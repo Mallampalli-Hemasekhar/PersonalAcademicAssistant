@@ -1,3 +1,4 @@
+
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
@@ -334,6 +335,17 @@ fun ProfileScreen(
             }
         }
 
+        // FEATURE 28: AI CODE EXPLAINER
+
+        "AICodeExplainer" -> {
+            FeatureContainer(
+                buttonColor = Color(0xFF1565C0),
+                onBack = { onFeatureSelected("Profile") }
+            ) {
+                AICodeExplainerScreen()
+            }
+        }
+
         "QuizGenerator" -> {
             FeatureContainer(
                 buttonColor = Color(0xFF7B1FA2),
@@ -515,6 +527,15 @@ fun ProfileScreen(
                     color = Color(0xFF5E35B1)
                 ) {
                     onFeatureSelected("AIDoubtSolver")
+                }
+
+                // FEATURE 28 BUTTON
+
+                ProfileButton(
+                    text = "💻 AI Code Explainer",
+                    color = Color(0xFF1565C0)
+                ) {
+                    onFeatureSelected("AICodeExplainer")
                 }
 
                 ProfileButton(
