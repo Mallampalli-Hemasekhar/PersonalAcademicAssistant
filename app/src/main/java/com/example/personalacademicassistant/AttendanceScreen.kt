@@ -1,3 +1,4 @@
+
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
@@ -16,13 +17,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,73 +47,62 @@ data class AttendanceRecord(
 @Composable
 fun AttendanceScreen() {
 
-    var showAddAttendance by remember {
-        mutableStateOf(false)
+    val auth = remember { FirebaseAuth.getInstance() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
+    val userId = auth.currentUser?.uid
+
+    var showAddAttendance by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    var attendanceRecords by remember {
+        mutableStateOf<List<AttendanceRecord>>(emptyList())
     }
 
-    var isLoading by remember {
-        mutableStateOf(true)
-    }
+    // Real-time Firestore attendance listener
+    DisposableEffect(userId) {
 
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
+        if (userId == null) {
 
-    val attendanceRecords = remember {
-        mutableStateListOf<AttendanceRecord>()
-    }
-
-    val auth = remember {
-        FirebaseAuth.getInstance()
-    }
-
-    val firestore = remember {
-        FirebaseFirestore.getInstance()
-    }
-
-    val currentUser = auth.currentUser
-
-    LaunchedEffect(Unit) {
-
-        if (currentUser == null) {
-
-            errorMessage = "User is not logged in."
+            errorMessage = "Please log in to view attendance."
             isLoading = false
+
+            onDispose { }
 
         } else {
 
-            firestore
-                .collection("users")
-                .document(currentUser.uid)
+            isLoading = true
+            errorMessage = ""
+
+            val listener = firestore.collection("users")
+                .document(userId)
                 .collection("attendance")
-                .get()
-                .addOnSuccessListener { result ->
+                .addSnapshotListener { result, error ->
 
-                    attendanceRecords.clear()
-
-                    for (document in result.documents) {
-
-                        val record = AttendanceRecord(
-                            id = document.id,
-                            subject = document.getString("subject") ?: "",
-                            totalClasses =
-                                document.getLong("totalClasses")?.toInt() ?: 0,
-                            attendedClasses =
-                                document.getLong("attendedClasses")?.toInt() ?: 0
-                        )
-
-                        attendanceRecords.add(record)
+                    if (error != null) {
+                        errorMessage = error.message
+                            ?: "Unable to load attendance."
+                        isLoading = false
+                        return@addSnapshotListener
                     }
 
+                    attendanceRecords = result?.documents?.map { document ->
+
+                        AttendanceRecord(
+                            id = document.id,
+                            subject = document.getString("subject") ?: "",
+                            totalClasses = document.getLong("totalClasses")?.toInt() ?: 0,
+                            attendedClasses = document.getLong("attendedClasses")?.toInt() ?: 0
+                        )
+
+                    } ?: emptyList()
+
                     isLoading = false
                 }
-                .addOnFailureListener { exception ->
 
-                    errorMessage =
-                        exception.message ?: "Failed to load attendance."
-
-                    isLoading = false
-                }
+            onDispose {
+                listener.remove()
+            }
         }
     }
 
@@ -130,19 +120,15 @@ fun AttendanceScreen() {
             color = Color(0xFF172554)
         )
 
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Track your subject-wise attendance",
+            text = "Your attendance overview",
             fontSize = 15.sp,
             color = Color.Gray
         )
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+        Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
@@ -154,47 +140,44 @@ fun AttendanceScreen() {
                 containerColor = Color(0xFF3F51B5)
             )
         ) {
-
             Text(
                 text = "+ Add Attendance",
                 fontSize = 16.sp
             )
         }
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         if (isLoading) {
 
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
-                Text(
-                    text = "Loading attendance...",
-                    color = Color.Gray
+                CircularProgressIndicator(
+                    color = Color(0xFF3F51B5)
                 )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text("Loading attendance...")
             }
 
-        } else if (errorMessage.isNotEmpty()) {
+        } else if (errorMessage.isNotBlank() && attendanceRecords.isEmpty()) {
 
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Text("⚠️", fontSize = 40.sp)
 
-                Text(
-                    text = "⚠️",
-                    fontSize = 45.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = errorMessage,
@@ -205,19 +188,15 @@ fun AttendanceScreen() {
         } else if (attendanceRecords.isEmpty()) {
 
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Text("📊", fontSize = 50.sp)
 
-                Text(
-                    text = "📊",
-                    fontSize = 50.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = "No attendance records yet",
@@ -236,6 +215,9 @@ fun AttendanceScreen() {
         } else {
 
             LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
@@ -248,54 +230,37 @@ fun AttendanceScreen() {
                         record = record,
 
                         onPresent = {
-
                             updateAttendance(
                                 firestore = firestore,
-                                userId = currentUser?.uid,
+                                userId = userId,
                                 record = record,
                                 newTotal = record.totalClasses + 1,
                                 newAttended = record.attendedClasses + 1,
-                                attendanceRecords = attendanceRecords,
-                                onError = { message ->
-                                    errorMessage = message
-                                }
+                                onError = { errorMessage = it }
                             )
                         },
 
                         onAbsent = {
-
                             updateAttendance(
                                 firestore = firestore,
-                                userId = currentUser?.uid,
+                                userId = userId,
                                 record = record,
                                 newTotal = record.totalClasses + 1,
                                 newAttended = record.attendedClasses,
-                                attendanceRecords = attendanceRecords,
-                                onError = { message ->
-                                    errorMessage = message
-                                }
+                                onError = { errorMessage = it }
                             )
                         },
 
                         onDelete = {
-
-                            currentUser?.let { user ->
-
-                                firestore
-                                    .collection("users")
-                                    .document(user.uid)
+                            if (userId != null) {
+                                firestore.collection("users")
+                                    .document(userId)
                                     .collection("attendance")
                                     .document(record.id)
                                     .delete()
-                                    .addOnSuccessListener {
-
-                                        attendanceRecords.remove(record)
-                                    }
                                     .addOnFailureListener { exception ->
-
-                                        errorMessage =
-                                            exception.message
-                                                ?: "Failed to delete attendance."
+                                        errorMessage = exception.message
+                                            ?: "Failed to delete attendance."
                                     }
                             }
                         }
@@ -303,55 +268,48 @@ fun AttendanceScreen() {
                 }
             }
         }
+
+        if (errorMessage.isNotBlank() && attendanceRecords.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                fontSize = 13.sp
+            )
+        }
     }
 
     if (showAddAttendance) {
 
         AddAttendanceDialog(
-
             onDismiss = {
                 showAddAttendance = false
             },
 
             onAddAttendance = { record ->
 
-                if (currentUser == null) {
+                if (userId == null) {
 
-                    errorMessage = "User is not logged in."
-                    showAddAttendance = false
+                    errorMessage = "Please log in first."
 
                 } else {
 
                     val attendanceData = hashMapOf(
-
                         "subject" to record.subject,
-
                         "totalClasses" to record.totalClasses,
-
                         "attendedClasses" to record.attendedClasses
                     )
 
-                    firestore
-                        .collection("users")
-                        .document(currentUser.uid)
+                    firestore.collection("users")
+                        .document(userId)
                         .collection("attendance")
                         .add(attendanceData)
-                        .addOnSuccessListener { documentReference ->
-
-                            attendanceRecords.add(
-                                record.copy(
-                                    id = documentReference.id
-                                )
-                            )
-
+                        .addOnSuccessListener {
                             showAddAttendance = false
                             errorMessage = ""
                         }
                         .addOnFailureListener { exception ->
-
-                            errorMessage =
-                                exception.message
-                                    ?: "Failed to add attendance."
+                            errorMessage = exception.message
+                                ?: "Failed to add attendance."
                         }
                 }
             }
@@ -359,23 +317,21 @@ fun AttendanceScreen() {
     }
 }
 
-fun updateAttendance(
+private fun updateAttendance(
     firestore: FirebaseFirestore,
     userId: String?,
     record: AttendanceRecord,
     newTotal: Int,
     newAttended: Int,
-    attendanceRecords: MutableList<AttendanceRecord>,
     onError: (String) -> Unit
 ) {
 
     if (userId == null) {
-        onError("User is not logged in.")
+        onError("Please log in first.")
         return
     }
 
-    firestore
-        .collection("users")
+    firestore.collection("users")
         .document(userId)
         .collection("attendance")
         .document(record.id)
@@ -385,24 +341,9 @@ fun updateAttendance(
                 "attendedClasses" to newAttended
             )
         )
-        .addOnSuccessListener {
-
-            val index = attendanceRecords.indexOf(record)
-
-            if (index != -1) {
-
-                attendanceRecords[index] =
-                    record.copy(
-                        totalClasses = newTotal,
-                        attendedClasses = newAttended
-                    )
-            }
-        }
         .addOnFailureListener { exception ->
-
             onError(
-                exception.message
-                    ?: "Failed to update attendance."
+                exception.message ?: "Failed to update attendance."
             )
         }
 }
@@ -415,31 +356,28 @@ fun AttendanceCard(
     onDelete: () -> Unit
 ) {
 
-    val percentage =
-        if (record.totalClasses > 0) {
-            (record.attendedClasses.toDouble() /
-                    record.totalClasses.toDouble()) * 100
-        } else {
-            0.0
-        }
+    val percentage = if (record.totalClasses > 0) {
+        record.attendedClasses.toDouble() / record.totalClasses * 100
+    } else {
+        0.0
+    }
 
-    val roundedPercentage =
-        round(percentage * 100) / 100
+    val roundedPercentage = round(percentage * 100) / 100
 
-    val percentageText =
-        "$roundedPercentage%"
-
-    val statusColor =
-        if (percentage < 75) {
-            Color(0xFFD32F2F)
-        } else {
-            Color(0xFF2E7D32)
-        }
+    val statusColor = if (percentage < 75) {
+        Color(0xFFD32F2F)
+    } else {
+        Color(0xFF2E7D32)
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
         )
     ) {
 
@@ -454,9 +392,7 @@ fun AttendanceCard(
                 color = Color(0xFF172554)
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Classes Held: ${record.totalClasses}",
@@ -470,23 +406,18 @@ fun AttendanceCard(
                 color = Color.Gray
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Attendance: $percentageText",
+                text = "Attendance: $roundedPercentage%",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = statusColor
             )
 
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
+            Spacer(modifier = Modifier.height(6.dp))
 
             if (percentage < 75) {
-
                 Text(
                     text = "⚠️ Attendance is below 75%",
                     fontSize = 14.sp,
@@ -494,7 +425,6 @@ fun AttendanceCard(
                     color = Color(0xFFD32F2F)
                 )
             } else {
-
                 Text(
                     text = "✅ Attendance is satisfactory",
                     fontSize = 14.sp,
@@ -502,9 +432,7 @@ fun AttendanceCard(
                 )
             }
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -512,42 +440,28 @@ fun AttendanceCard(
             ) {
 
                 Button(
-                    onClick = {
-                        onPresent()
-                    }
+                    onClick = onPresent
                 ) {
-
                     Text("Present")
                 }
 
                 Button(
-                    onClick = {
-                        onAbsent()
-                    },
+                    onClick = onAbsent,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFD32F2F)
                     )
                 ) {
-
                     Text("Absent")
                 }
             }
-
-            Spacer(
-                modifier = Modifier.height(5.dp)
-            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-
                 TextButton(
-                    onClick = {
-                        onDelete()
-                    }
+                    onClick = onDelete
                 ) {
-
                     Text(
                         text = "Delete",
                         color = Color.Red
@@ -564,23 +478,13 @@ fun AddAttendanceDialog(
     onAddAttendance: (AttendanceRecord) -> Unit
 ) {
 
-    var subject by remember {
-        mutableStateOf("")
-    }
-
-    var totalClasses by remember {
-        mutableStateOf("")
-    }
-
-    var attendedClasses by remember {
-        mutableStateOf("")
-    }
+    var subject by remember { mutableStateOf("") }
+    var totalClasses by remember { mutableStateOf("") }
+    var attendedClasses by remember { mutableStateOf("") }
+    var validationError by remember { mutableStateOf("") }
 
     AlertDialog(
-
-        onDismissRequest = {
-            onDismiss()
-        },
+        onDismissRequest = onDismiss,
 
         title = {
             Text(
@@ -590,105 +494,100 @@ fun AddAttendanceDialog(
         },
 
         text = {
-
             Column {
 
                 OutlinedTextField(
                     value = subject,
                     onValueChange = {
                         subject = it
+                        validationError = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Subject")
-                    },
-                    placeholder = {
-                        Text("Example: DBMS")
-                    },
+                    label = { Text("Subject") },
+                    placeholder = { Text("Example: DBMS") },
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = totalClasses,
                     onValueChange = {
                         totalClasses = it
+                        validationError = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Total Classes")
-                    },
-                    placeholder = {
-                        Text("Example: 20")
-                    },
+                    label = { Text("Total Classes") },
+                    placeholder = { Text("Example: 20") },
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = attendedClasses,
                     onValueChange = {
                         attendedClasses = it
+                        validationError = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Classes Attended")
-                    },
-                    placeholder = {
-                        Text("Example: 17")
-                    },
+                    label = { Text("Classes Attended") },
+                    placeholder = { Text("Example: 17") },
                     singleLine = true
                 )
+
+                if (validationError.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = validationError,
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
+                }
             }
         },
 
         confirmButton = {
-
             Button(
                 onClick = {
 
                     val total = totalClasses.toIntOrNull()
                     val attended = attendedClasses.toIntOrNull()
 
-                    if (
-                        subject.isNotBlank() &&
-                        total != null &&
-                        attended != null &&
-                        total > 0 &&
-                        attended >= 0 &&
-                        attended <= total
-                    ) {
+                    when {
+                        subject.isBlank() ->
+                            validationError = "Enter a subject name."
 
-                        onAddAttendance(
+                        total == null || attended == null ->
+                            validationError = "Enter valid class numbers."
 
-                            AttendanceRecord(
-                                subject = subject,
-                                totalClasses = total,
-                                attendedClasses = attended
+                        total <= 0 ->
+                            validationError = "Total classes must be greater than zero."
+
+                        attended < 0 || attended > total ->
+                            validationError = "Attended classes must be between 0 and total classes."
+
+                        else -> {
+                            onAddAttendance(
+                                AttendanceRecord(
+                                    subject = subject.trim(),
+                                    totalClasses = total,
+                                    attendedClasses = attended
+                                )
                             )
-                        )
+                        }
                     }
                 }
             ) {
-
                 Text("Add")
             }
         },
 
         dismissButton = {
-
             TextButton(
-                onClick = {
-                    onDismiss()
-                }
+                onClick = onDismiss
             ) {
-
                 Text("Cancel")
             }
         }

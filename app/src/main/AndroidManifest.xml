@@ -30,6 +30,12 @@
 
         </activity>
 
+        <!-- Class Reminder Receiver -->
+        <receiver
+            android:name=".ClassReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>

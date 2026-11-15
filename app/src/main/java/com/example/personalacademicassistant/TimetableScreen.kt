@@ -1,5 +1,11 @@
+
 package com.example.personalacademicassistant
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,9 +37,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -49,43 +57,54 @@ data class TimetableEntry(
 @Composable
 fun TimetableScreen() {
 
-    var showAddTimetable by remember {
-        mutableStateOf(false)
-    }
+    val context = LocalContext.current
 
-    var isLoading by remember {
-        mutableStateOf(true)
-    }
-
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
+    var showAddTimetable by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf("") }
 
     val timetableEntries = remember {
         mutableStateListOf<TimetableEntry>()
     }
 
-    val auth = remember {
-        FirebaseAuth.getInstance()
-    }
-
-    val firestore = remember {
-        FirebaseFirestore.getInstance()
-    }
-
+    val auth = remember { FirebaseAuth.getInstance() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
     val currentUser = auth.currentUser
+
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (!isGranted) {
+                errorMessage =
+                    "Please allow notifications in Android settings to receive class reminders."
+            }
+        }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+            val permissionGranted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!permissionGranted) {
+                notificationPermissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
 
         if (currentUser == null) {
-
             errorMessage = "User is not logged in."
             isLoading = false
-
         } else {
 
-            firestore
-                .collection("users")
+            firestore.collection("users")
                 .document(currentUser.uid)
                 .collection("timetable")
                 .get()
@@ -105,15 +124,22 @@ fun TimetableScreen() {
                         )
 
                         timetableEntries.add(entry)
+
+                        ClassReminderScheduler.scheduleNext(
+                            context.applicationContext,
+                            entry.id,
+                            entry.subject,
+                            entry.day,
+                            entry.startTime,
+                            entry.classroom
+                        )
                     }
 
                     isLoading = false
                 }
                 .addOnFailureListener { exception ->
-
-                    errorMessage =
-                        exception.message ?: "Failed to load timetable."
-
+                    errorMessage = exception.message
+                        ?: "Failed to load timetable."
                     isLoading = false
                 }
         }
@@ -133,9 +159,7 @@ fun TimetableScreen() {
             color = Color(0xFF172554)
         )
 
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Manage your weekly class schedule",
@@ -143,9 +167,7 @@ fun TimetableScreen() {
             color = Color.Gray
         )
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+        Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = {
@@ -157,16 +179,10 @@ fun TimetableScreen() {
                 containerColor = Color(0xFF3F51B5)
             )
         ) {
-
-            Text(
-                text = "+ Add Class",
-                fontSize = 16.sp
-            )
+            Text("+ Add Class", fontSize = 16.sp)
         }
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+        Spacer(modifier = Modifier.height(20.dp))
 
         if (isLoading) {
 
@@ -175,11 +191,7 @@ fun TimetableScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
-                Text(
-                    text = "Loading timetable...",
-                    color = Color.Gray
-                )
+                Text("Loading timetable...", color = Color.Gray)
             }
 
         } else if (errorMessage.isNotEmpty()) {
@@ -189,20 +201,9 @@ fun TimetableScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-
-                Text(
-                    text = "⚠️",
-                    fontSize = 45.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-                Text(
-                    text = errorMessage,
-                    color = Color.Red
-                )
+                Text("⚠️", fontSize = 45.sp)
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(errorMessage, color = Color.Red)
             }
 
         } else if (timetableEntries.isEmpty()) {
@@ -212,15 +213,9 @@ fun TimetableScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Text("📅", fontSize = 50.sp)
 
-                Text(
-                    text = "📅",
-                    fontSize = 50.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
                     text = "No classes added yet",
@@ -241,7 +236,6 @@ fun TimetableScreen() {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-
                 items(
                     items = timetableEntries,
                     key = { it.id }
@@ -251,23 +245,27 @@ fun TimetableScreen() {
                         entry = entry,
                         onDelete = {
 
-                            currentUser?.let { user ->
+                            val user = auth.currentUser
 
-                                firestore
-                                    .collection("users")
+                            if (user != null) {
+
+                                firestore.collection("users")
                                     .document(user.uid)
                                     .collection("timetable")
                                     .document(entry.id)
                                     .delete()
                                     .addOnSuccessListener {
 
+                                        ClassReminderScheduler.cancel(
+                                            context.applicationContext,
+                                            entry.id
+                                        )
+
                                         timetableEntries.remove(entry)
                                     }
                                     .addOnFailureListener { exception ->
-
-                                        errorMessage =
-                                            exception.message
-                                                ?: "Failed to delete class."
+                                        errorMessage = exception.message
+                                            ?: "Failed to delete class."
                                     }
                             }
                         }
@@ -280,14 +278,14 @@ fun TimetableScreen() {
     if (showAddTimetable) {
 
         AddTimetableDialog(
-
             onDismiss = {
                 showAddTimetable = false
             },
-
             onAddTimetable = { entry ->
 
-                if (currentUser == null) {
+                val user = auth.currentUser
+
+                if (user == null) {
 
                     errorMessage = "User is not logged in."
                     showAddTimetable = false
@@ -295,39 +293,40 @@ fun TimetableScreen() {
                 } else {
 
                     val timetableData = hashMapOf(
-
                         "subject" to entry.subject,
-
                         "day" to entry.day,
-
                         "startTime" to entry.startTime,
-
                         "endTime" to entry.endTime,
-
                         "classroom" to entry.classroom
                     )
 
-                    firestore
-                        .collection("users")
-                        .document(currentUser.uid)
+                    firestore.collection("users")
+                        .document(user.uid)
                         .collection("timetable")
                         .add(timetableData)
                         .addOnSuccessListener { documentReference ->
 
-                            timetableEntries.add(
-                                entry.copy(
-                                    id = documentReference.id
-                                )
+                            val savedEntry = entry.copy(
+                                id = documentReference.id
+                            )
+
+                            timetableEntries.add(savedEntry)
+
+                            ClassReminderScheduler.scheduleNext(
+                                context.applicationContext,
+                                savedEntry.id,
+                                savedEntry.subject,
+                                savedEntry.day,
+                                savedEntry.startTime,
+                                savedEntry.classroom
                             )
 
                             showAddTimetable = false
                             errorMessage = ""
                         }
                         .addOnFailureListener { exception ->
-
-                            errorMessage =
-                                exception.message
-                                    ?: "Failed to add class."
+                            errorMessage = exception.message
+                                ?: "Failed to add class."
                         }
                 }
             }
@@ -359,9 +358,7 @@ fun TimetableCard(
                 color = Color(0xFF172554)
             )
 
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 text = "📅 ${entry.day}",
@@ -381,25 +378,14 @@ fun TimetableCard(
                 color = Color.Gray
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-
-                TextButton(
-                    onClick = {
-                        onDelete()
-                    }
-                ) {
-
-                    Text(
-                        text = "Delete",
-                        color = Color.Red
-                    )
+                TextButton(onClick = onDelete) {
+                    Text("Delete", color = Color.Red)
                 }
             }
         }
@@ -412,29 +398,12 @@ fun AddTimetableDialog(
     onAddTimetable: (TimetableEntry) -> Unit
 ) {
 
-    var subject by remember {
-        mutableStateOf("")
-    }
-
-    var day by remember {
-        mutableStateOf("")
-    }
-
-    var startTime by remember {
-        mutableStateOf("")
-    }
-
-    var endTime by remember {
-        mutableStateOf("")
-    }
-
-    var classroom by remember {
-        mutableStateOf("")
-    }
-
-    var expanded by remember {
-        mutableStateOf(false)
-    }
+    var subject by remember { mutableStateOf("") }
+    var day by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf("") }
+    var endTime by remember { mutableStateOf("") }
+    var classroom by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
 
     val days = listOf(
         "Monday",
@@ -446,37 +415,27 @@ fun AddTimetableDialog(
     )
 
     AlertDialog(
-
-        onDismissRequest = {
-            onDismiss()
-        },
+        onDismissRequest = onDismiss,
 
         title = {
             Text(
-                text = "Add Class",
+                "Add Class",
                 fontWeight = FontWeight.Bold
             )
         },
 
         text = {
-
             Column {
 
                 OutlinedTextField(
                     value = subject,
-                    onValueChange = {
-                        subject = it
-                    },
+                    onValueChange = { subject = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Subject")
-                    },
+                    label = { Text("Subject") },
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Column {
 
@@ -484,9 +443,7 @@ fun AddTimetableDialog(
                         value = day,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
-                        label = {
-                            Text("Day")
-                        },
+                        label = { Text("Day") },
                         readOnly = true,
                         singleLine = true
                     )
@@ -497,17 +454,13 @@ fun AddTimetableDialog(
                             expanded = false
                         }
                     ) {
-
                         days.forEach { selectedDay ->
 
                             DropdownMenuItem(
-
                                 text = {
                                     Text(selectedDay)
                                 },
-
                                 onClick = {
-
                                     day = selectedDay
                                     expanded = false
                                 }
@@ -515,9 +468,7 @@ fun AddTimetableDialog(
                         }
                     }
 
-                    Spacer(
-                        modifier = Modifier.height(5.dp)
-                    )
+                    Spacer(modifier = Modifier.height(5.dp))
 
                     Button(
                         onClick = {
@@ -525,9 +476,8 @@ fun AddTimetableDialog(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-
                         Text(
-                            text = if (day.isEmpty()) {
+                            if (day.isEmpty()) {
                                 "Select Day"
                             } else {
                                 day
@@ -536,67 +486,42 @@ fun AddTimetableDialog(
                     }
                 }
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = startTime,
-                    onValueChange = {
-                        startTime = it
-                    },
+                    onValueChange = { startTime = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Start Time")
-                    },
-                    placeholder = {
-                        Text("Example: 09:00 AM")
-                    },
+                    label = { Text("Start Time") },
+                    placeholder = { Text("Example: 09:00 AM") },
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = endTime,
-                    onValueChange = {
-                        endTime = it
-                    },
+                    onValueChange = { endTime = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("End Time")
-                    },
-                    placeholder = {
-                        Text("Example: 10:00 AM")
-                    },
+                    label = { Text("End Time") },
+                    placeholder = { Text("Example: 10:00 AM") },
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 OutlinedTextField(
                     value = classroom,
-                    onValueChange = {
-                        classroom = it
-                    },
+                    onValueChange = { classroom = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Classroom")
-                    },
-                    placeholder = {
-                        Text("Example: C-204")
-                    },
+                    label = { Text("Classroom") },
+                    placeholder = { Text("Example: C-204") },
                     singleLine = true
                 )
             }
         },
 
         confirmButton = {
-
             Button(
                 onClick = {
 
@@ -609,36 +534,23 @@ fun AddTimetableDialog(
                     ) {
 
                         onAddTimetable(
-
                             TimetableEntry(
-
                                 subject = subject,
-
                                 day = day,
-
                                 startTime = startTime,
-
                                 endTime = endTime,
-
                                 classroom = classroom
                             )
                         )
                     }
                 }
             ) {
-
                 Text("Add")
             }
         },
 
         dismissButton = {
-
-            TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-
+            TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
         }
