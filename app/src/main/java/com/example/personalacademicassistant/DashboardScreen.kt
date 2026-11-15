@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +24,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+private val DashboardBackground = Color(0xFFF5F6FC)
+private val DashboardPrimary = Color(0xFF5365D9)
+private val DashboardDark = Color(0xFF20294D)
+private val DashboardMuted = Color(0xFF858CA3)
+private val DashboardGreen = Color(0xFF12A889)
+private val DashboardOrange = Color(0xFFE39A38)
+private val DashboardRed = Color(0xFFE05A5A)
 
 private data class DashboardClass(
     val id: String,
@@ -47,7 +56,6 @@ private fun parseClassTime(time: String): Int? {
         try {
             val format = SimpleDateFormat(pattern, Locale.ENGLISH)
             format.isLenient = false
-
             val date = format.parse(time.trim()) ?: continue
 
             val calendar = Calendar.getInstance().apply {
@@ -56,9 +64,8 @@ private fun parseClassTime(time: String): Int? {
 
             return calendar.get(Calendar.HOUR_OF_DAY) * 60 +
                     calendar.get(Calendar.MINUTE)
-
         } catch (_: Exception) {
-            // Try another supported format.
+            // Try the next supported time format.
         }
     }
 
@@ -81,7 +88,7 @@ private fun parseAssignmentDate(date: String): Date? {
 
             if (parsed != null) return parsed
         } catch (_: Exception) {
-            // Try another supported format.
+            // Try the next supported date format.
         }
     }
 
@@ -134,10 +141,17 @@ fun DashboardScreen() {
     val currentMinutes = hour * 60 + calendar.get(Calendar.MINUTE)
 
     val greeting = when (hour) {
-        in 5..11 -> "Good Morning! ☀️"
-        in 12..16 -> "Good Afternoon! 🌤️"
-        in 17..20 -> "Good Evening! 🌆"
-        else -> "Good Night! 🌙"
+        in 5..11 -> "Good Morning!"
+        in 12..16 -> "Good Afternoon!"
+        in 17..20 -> "Good Evening!"
+        else -> "Good Night!"
+    }
+
+    val greetingEmoji = when (hour) {
+        in 5..11 -> "☀️"
+        in 12..16 -> "🌤️"
+        in 17..20 -> "🌆"
+        else -> "🌙"
     }
 
     val todayName = SimpleDateFormat(
@@ -401,89 +415,25 @@ fun DashboardScreen() {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF4F6FC))
+            .background(DashboardBackground)
             .padding(horizontal = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(17.dp)
     ) {
 
         item {
-            Spacer(modifier = Modifier.height(5.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(25.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Transparent
-                )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFF263C91),
-                                    Color(0xFF536DE8),
-                                    Color(0xFF8297F5)
-                                )
-                            )
-                        )
-                        .padding(22.dp)
-                ) {
-                    Column {
-
-                        Text(
-                            "PERSONAL ACADEMIC ASSISTANT",
-                            color = Color.White.copy(alpha = 0.8f),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        )
-
-                        Spacer(modifier = Modifier.height(22.dp))
-
-                        Text(
-                            greeting,
-                            fontSize = 27.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-
-                        Spacer(modifier = Modifier.height(7.dp))
-
-                        Text(
-                            "Welcome back, $studentName",
-                            fontSize = 16.sp,
-                            color = Color.White.copy(alpha = 0.95f)
-                        )
-
-                        Spacer(modifier = Modifier.height(15.dp))
-
-                        Surface(
-                            color = Color.White.copy(alpha = 0.16f),
-                            shape = RoundedCornerShape(30.dp)
-                        ) {
-                            Text(
-                                "📅  $currentDate",
-                                modifier = Modifier.padding(
-                                    horizontal = 13.dp,
-                                    vertical = 8.dp
-                                ),
-                                color = Color.White,
-                                fontSize = 12.sp
-                            )
-                        }
-                    }
-                }
-            }
+            DashboardWelcomeCard(
+                greeting = greeting,
+                emoji = greetingEmoji,
+                studentName = studentName,
+                currentDate = currentDate
+            )
         }
 
         item {
-            Text(
-                "Your Overview",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF18234A)
+            DashboardSectionTitle(
+                title = "Your Overview",
+                subtitle = "A quick look at your academic day"
             )
         }
 
@@ -496,7 +446,7 @@ fun DashboardScreen() {
                     title = "Today's Classes",
                     value = classes.size.toString(),
                     emoji = "📚",
-                    color = Color(0xFF536DE8),
+                    color = DashboardPrimary,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -504,7 +454,7 @@ fun DashboardScreen() {
                     title = "Pending Tasks",
                     value = tasks.size.toString(),
                     emoji = "✅",
-                    color = Color(0xFF12A889),
+                    color = DashboardGreen,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -515,11 +465,9 @@ fun DashboardScreen() {
         }
 
         item {
-            Text(
-                "Today's Study Progress",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF18234A)
+            DashboardSectionTitle(
+                title = "Today's Study Progress",
+                subtitle = "Keep moving towards your daily goals"
             )
         }
 
@@ -545,11 +493,9 @@ fun DashboardScreen() {
         }
 
         item {
-            Text(
-                "Next Upcoming Class",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF18234A)
+            DashboardSectionTitle(
+                title = "Next Upcoming Class",
+                subtitle = "Your next class for today"
             )
         }
 
@@ -575,15 +521,14 @@ fun DashboardScreen() {
             ) {
                 Text(
                     "Today's Schedule",
-                    fontSize = 20.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF18234A)
+                    color = DashboardDark
                 )
 
-                Text(
-                    "${classes.size} classes",
-                    fontSize = 12.sp,
-                    color = Color(0xFF536DE8)
+                DashboardCountChip(
+                    text = "${classes.size} classes",
+                    color = DashboardPrimary
                 )
             }
         }
@@ -605,11 +550,9 @@ fun DashboardScreen() {
         }
 
         item {
-            Text(
-                "Nearest Assignment Deadline",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF18234A)
+            DashboardSectionTitle(
+                title = "Nearest Assignment Deadline",
+                subtitle = "Stay ahead of your submissions"
             )
         }
 
@@ -635,15 +578,14 @@ fun DashboardScreen() {
             ) {
                 Text(
                     "Upcoming Tasks",
-                    fontSize = 20.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF18234A)
+                    color = DashboardDark
                 )
 
-                Text(
-                    "${tasks.size} pending",
-                    fontSize = 12.sp,
-                    color = Color(0xFF12A889)
+                DashboardCountChip(
+                    text = "${tasks.size} pending",
+                    color = DashboardGreen
                 )
             }
         }
@@ -666,14 +608,444 @@ fun DashboardScreen() {
             item {
                 Text(
                     text = errorMessage,
-                    color = Color.Red,
+                    color = DashboardRed,
                     fontSize = 13.sp
                 )
             }
         }
+    }
+}
 
-        item {
-            Spacer(modifier = Modifier.height(15.dp))
+@Composable
+private fun DashboardWelcomeCard(
+    greeting: String,
+    emoji: String,
+    studentName: String,
+    currentDate: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 5.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF293B91),
+                            Color(0xFF5365D9),
+                            Color(0xFF8998F3)
+                        )
+                    )
+                )
+                .padding(22.dp)
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "PERSONAL ACADEMIC ASSISTANT",
+                            color = Color.White.copy(alpha = 0.78f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(19.dp))
+
+                        Text(
+                            "$greeting $emoji",
+                            fontSize = 25.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.height(7.dp))
+
+                        Text(
+                            "Welcome back,",
+                            fontSize = 14.sp,
+                            color = Color.White.copy(alpha = 0.82f)
+                        )
+
+                        Text(
+                            studentName,
+                            fontSize = 21.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Surface(
+                        modifier = Modifier.size(64.dp),
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.18f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("🎓", fontSize = 35.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(21.dp))
+
+                Surface(
+                    color = Color.White.copy(alpha = 0.16f),
+                    shape = RoundedCornerShape(30.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(
+                            horizontal = 13.dp,
+                            vertical = 9.dp
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("📅", fontSize = 14.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            currentDate,
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardSectionTitle(
+    title: String,
+    subtitle: String
+) {
+    Column {
+        Text(
+            title,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Bold,
+            color = DashboardDark
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            subtitle,
+            fontSize = 12.sp,
+            color = DashboardMuted
+        )
+    }
+}
+
+@Composable
+private fun DashboardCountChip(
+    text: String,
+    color: Color
+) {
+    Surface(
+        color = color.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(30.dp)
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(
+                horizontal = 11.dp,
+                vertical = 7.dp
+            ),
+            color = color,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun DashboardStatCard(
+    title: String,
+    value: String,
+    emoji: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.height(148.dp),
+        shape = RoundedCornerShape(23.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(3.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(17.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = color.copy(alpha = 0.11f)
+                ) {
+                    Text(
+                        emoji,
+                        modifier = Modifier.padding(10.dp),
+                        fontSize = 21.sp
+                    )
+                }
+
+                Text(
+                    "●",
+                    color = color.copy(alpha = 0.35f),
+                    fontSize = 12.sp
+                )
+            }
+
+            Text(
+                value,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = color
+            )
+
+            Text(
+                title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = DashboardMuted
+            )
+        }
+    }
+}
+
+@Composable
+private fun DashboardAttendanceCard(percentage: Int) {
+    val progress = (percentage / 100f).coerceIn(0f, 1f)
+    val statusColor = if (percentage >= 75) DashboardGreen else DashboardOrange
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(3.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        "Overall Attendance",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DashboardDark
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        "Your academic attendance",
+                        fontSize = 12.sp,
+                        color = DashboardMuted
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(15.dp),
+                    color = Color(0xFFEDEFFF)
+                ) {
+                    Text(
+                        "📊",
+                        modifier = Modifier.padding(11.dp),
+                        fontSize = 22.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(19.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    "$percentage%",
+                    fontSize = 33.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DashboardPrimary
+                )
+
+                Text(
+                    if (percentage >= 75) "Good progress ✓"
+                    else "Needs improvement",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = statusColor
+                )
+            }
+
+            Spacer(modifier = Modifier.height(11.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(11.dp)
+                    .background(
+                        Color(0xFFEAECF5),
+                        RoundedCornerShape(20.dp)
+                    )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(
+                                    DashboardPrimary,
+                                    DashboardGreen
+                                )
+                            ),
+                            RoundedCornerShape(20.dp)
+                        )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                "Target attendance: 75%",
+                fontSize = 11.sp,
+                color = DashboardMuted
+            )
+        }
+    }
+}
+
+@Composable
+private fun DashboardStudyProgressCard(
+    targetHours: Double,
+    completedHours: Double,
+    remainingHours: Double,
+    completedGoals: Int,
+    totalGoals: Int,
+    progress: Float
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(3.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Study time completed",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DashboardDark
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        "$completedGoals of $totalGoals goals completed",
+                        fontSize = 12.sp,
+                        color = DashboardMuted
+                    )
+                }
+
+                Text("🎯", fontSize = 29.sp)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    "${(progress * 100).toInt()}%",
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DashboardPrimary
+                )
+
+                Text(
+                    "${"%.1f".format(completedHours)} / ${"%.1f".format(targetHours)} hrs",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DashboardGreen
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LinearProgressIndicator(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp),
+                color = DashboardPrimary,
+                trackColor = Color(0xFFEAECF5)
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        "Completed",
+                        fontSize = 11.sp,
+                        color = DashboardMuted
+                    )
+
+                    Text(
+                        "${"%.1f".format(completedHours)} hrs",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DashboardGreen
+                    )
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "Remaining",
+                        fontSize = 11.sp,
+                        color = DashboardMuted
+                    )
+
+                    Text(
+                        "${"%.1f".format(remainingHours)} hrs",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DashboardOrange
+                    )
+                }
+            }
         }
     }
 }
@@ -682,54 +1054,118 @@ fun DashboardScreen() {
 private fun DashboardNextClassCard(entry: DashboardClass) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(3.dp)
+        elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(19.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(55.dp)
-                    .background(
-                        Color(0xFFE9EDFF),
-                        RoundedCornerShape(17.dp)
-                    ),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(58.dp),
+                shape = RoundedCornerShape(18.dp),
+                color = Color(0xFFEDEFFF)
             ) {
-                Text("📚", fontSize = 28.sp)
+                Box(contentAlignment = Alignment.Center) {
+                    Text("📚", fontSize = 29.sp)
+                }
             }
 
             Spacer(modifier = Modifier.width(15.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
+                    "UP NEXT",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                    color = DashboardPrimary
+                )
+
+                Spacer(modifier = Modifier.height(5.dp))
+
+                Text(
                     entry.subject,
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF18234A)
+                    color = DashboardDark
                 )
 
                 Spacer(modifier = Modifier.height(7.dp))
 
                 Text(
                     "⏰ ${entry.startTime} - ${entry.endTime}",
-                    fontSize = 13.sp,
-                    color = Color(0xFF536DE8)
+                    fontSize = 12.sp,
+                    color = DashboardMuted
                 )
 
                 if (entry.classroom.isNotBlank()) {
                     Text(
                         "🏫 ${entry.classroom}",
                         fontSize = 12.sp,
-                        color = Color.Gray
+                        color = DashboardMuted
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DashboardClassCard(entry: DashboardClass) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(21.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(17.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .height(67.dp)
+                    .background(
+                        DashboardPrimary,
+                        RoundedCornerShape(10.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    entry.subject,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DashboardDark
+                )
+
+                Spacer(modifier = Modifier.height(7.dp))
+
+                Text(
+                    "⏰ ${entry.startTime} - ${entry.endTime}",
+                    fontSize = 12.sp,
+                    color = DashboardMuted
+                )
+
+                if (entry.classroom.isNotBlank()) {
+                    Text(
+                        "🏫 ${entry.classroom}",
+                        fontSize = 12.sp,
+                        color = DashboardMuted
+                    )
+                }
+            }
+
+            Text("›", fontSize = 27.sp, color = DashboardPrimary)
         }
     }
 }
@@ -752,21 +1188,16 @@ private fun DashboardDeadlineCard(task: DashboardTask) {
     }
 
     val statusColor = if (deadlineStatus == "Overdue") {
-        Color(0xFFE05A5A)
+        DashboardRed
     } else {
-        Color(0xFF12A889)
+        DashboardGreen
     }
 
-    val priorityColor = when (task.priority.lowercase()) {
-        "high" -> Color(0xFFE05A5A)
-        "medium" -> Color(0xFFE39A38)
-        "low" -> Color(0xFF12A889)
-        else -> Color(0xFF536DE8)
-    }
+    val priorityColor = dashboardPriorityColor(task.priority)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(3.dp)
     ) {
@@ -776,47 +1207,71 @@ private fun DashboardDeadlineCard(task: DashboardTask) {
                 .padding(20.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("📝", fontSize = 30.sp)
+                Surface(
+                    shape = RoundedCornerShape(15.dp),
+                    color = Color(0xFFFFF2E7)
+                ) {
+                    Text(
+                        "📝",
+                        modifier = Modifier.padding(11.dp),
+                        fontSize = 23.sp
+                    )
+                }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         task.title,
-                        fontSize = 17.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF18234A)
+                        color = DashboardDark
                     )
 
                     if (task.subject.isNotBlank()) {
                         Text(
                             task.subject,
                             fontSize = 12.sp,
-                            color = Color.Gray
+                            color = DashboardMuted
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(15.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Due date", fontSize = 11.sp, color = Color.Gray)
+                    Text(
+                        "DUE DATE",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DashboardMuted
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
                     Text(
                         task.dueDate,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF18234A)
+                        color = DashboardDark
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Priority", fontSize = 11.sp, color = Color.Gray)
+                    Text(
+                        "PRIORITY",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DashboardMuted
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
                     Text(
                         task.priority,
                         fontSize = 14.sp,
@@ -826,348 +1281,63 @@ private fun DashboardDeadlineCard(task: DashboardTask) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
-            Surface(
-                color = statusColor.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Text(
-                    deadlineStatus,
-                    modifier = Modifier.padding(
-                        horizontal = 12.dp,
-                        vertical = 7.dp
-                    ),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = statusColor
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DashboardStudyProgressCard(
-    targetHours: Double,
-    completedHours: Double,
-    remainingHours: Double,
-    completedGoals: Int,
-    totalGoals: Int,
-    progress: Float
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(3.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        "Study time completed",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF18234A)
-                    )
-
-                    Text(
-                        "$completedGoals of $totalGoals goals completed",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                Text("🎯", fontSize = 30.sp)
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "${(progress * 100).toInt()}%",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF536DE8)
-                )
-
-                Text(
-                    "${"%.1f".format(completedHours)} / ${"%.1f".format(targetHours)} hrs",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF12A889)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            LinearProgressIndicator(
-                progress = progress,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp),
-                color = Color(0xFF536DE8),
-                trackColor = Color(0xFFE9ECF5)
+            DashboardCountChip(
+                text = deadlineStatus,
+                color = statusColor
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text("Completed", fontSize = 12.sp, color = Color.Gray)
-                    Text(
-                        "${"%.1f".format(completedHours)} hrs",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF12A889)
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("Remaining", fontSize = 12.sp, color = Color.Gray)
-                    Text(
-                        "${"%.1f".format(remainingHours)} hrs",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE39A38)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DashboardStatCard(
-    title: String,
-    value: String,
-    emoji: String,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.height(145.dp),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(3.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(17.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(emoji, fontSize = 27.sp)
-            Text(
-                value,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = color
-            )
-            Text(title, fontSize = 13.sp, color = Color(0xFF737B91))
-        }
-    }
-}
-
-@Composable
-private fun DashboardAttendanceCard(percentage: Int) {
-    val progress = (percentage / 100f).coerceIn(0f, 1f)
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(3.dp)
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        "Overall Attendance",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF18234A)
-                    )
-
-                    Text(
-                        "Your academic attendance",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-
-                Text("📊", fontSize = 30.sp)
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "$percentage%",
-                    fontSize = 31.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF536DE8)
-                )
-
-                Text(
-                    if (percentage >= 75) "Good progress ✓"
-                    else "Needs improvement",
-                    fontSize = 12.sp,
-                    color = if (percentage >= 75) {
-                        Color(0xFF12A889)
-                    } else {
-                        Color(0xFFE58A35)
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .background(
-                        Color(0xFFE9ECF5),
-                        RoundedCornerShape(20.dp)
-                    )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(progress)
-                        .fillMaxHeight()
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color(0xFF536DE8),
-                                    Color(0xFF12A889)
-                                )
-                            ),
-                            RoundedCornerShape(20.dp)
-                        )
-                )
-            }
-
-            Spacer(modifier = Modifier.height(9.dp))
-
-            Text(
-                "Target attendance: 75%",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-        }
-    }
-}
-
-@Composable
-private fun DashboardClassCard(entry: DashboardClass) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(17.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(5.dp)
-                    .height(65.dp)
-                    .background(
-                        Color(0xFF536DE8),
-                        RoundedCornerShape(10.dp)
-                    )
-            )
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    entry.subject,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF18234A)
-                )
-
-                Spacer(modifier = Modifier.height(7.dp))
-
-                Text(
-                    "⏰ ${entry.startTime} - ${entry.endTime}",
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
-
-                if (entry.classroom.isNotBlank()) {
-                    Text(
-                        "🏫 ${entry.classroom}",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
         }
     }
 }
 
 @Composable
 private fun DashboardTaskCard(task: DashboardTask) {
-    val priorityColor = when (task.priority.lowercase()) {
-        "high" -> Color(0xFFE05A5A)
-        "medium" -> Color(0xFFE39A38)
-        "low" -> Color(0xFF12A889)
-        else -> Color(0xFF536DE8)
-    }
+    val priorityColor = dashboardPriorityColor(task.priority)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(21.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Text(
-                task.title,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF18234A)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(13.dp),
+                    color = Color(0xFFEDEFFF)
+                ) {
+                    Text(
+                        "📋",
+                        modifier = Modifier.padding(9.dp),
+                        fontSize = 20.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    task.title,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DashboardDark
+                )
+            }
 
             if (task.subject.isNotBlank()) {
                 Text(
                     "📚 ${task.subject}",
-                    modifier = Modifier.padding(top = 8.dp),
-                    fontSize = 13.sp,
-                    color = Color.Gray
+                    modifier = Modifier.padding(top = 11.dp),
+                    fontSize = 12.sp,
+                    color = DashboardMuted
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(13.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1177,26 +1347,24 @@ private fun DashboardTaskCard(task: DashboardTask) {
                 Text(
                     "📅 ${task.dueDate}",
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = DashboardMuted
                 )
 
-                Surface(
-                    color = priorityColor.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Text(
-                        task.priority,
-                        modifier = Modifier.padding(
-                            horizontal = 12.dp,
-                            vertical = 6.dp
-                        ),
-                        color = priorityColor,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                DashboardCountChip(
+                    text = task.priority,
+                    color = priorityColor
+                )
             }
         }
+    }
+}
+
+private fun dashboardPriorityColor(priority: String): Color {
+    return when (priority.lowercase()) {
+        "high" -> DashboardRed
+        "medium" -> DashboardOrange
+        "low" -> DashboardGreen
+        else -> DashboardPrimary
     }
 }
 
@@ -1208,33 +1376,42 @@ private fun DashboardEmptyCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(23.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(25.dp),
+                .padding(horizontal = 22.dp, vertical = 25.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(emoji, fontSize = 36.sp)
+            Surface(
+                shape = CircleShape,
+                color = Color(0xFFF0F1FA)
+            ) {
+                Text(
+                    emoji,
+                    modifier = Modifier.padding(15.dp),
+                    fontSize = 28.sp
+                )
+            }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(13.dp))
 
             Text(
                 title,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF18234A)
+                color = DashboardDark
             )
 
-            Spacer(modifier = Modifier.height(7.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Text(
                 description,
-                fontSize = 13.sp,
-                color = Color.Gray
+                fontSize = 12.sp,
+                color = DashboardMuted
             )
         }
     }
@@ -1244,8 +1421,9 @@ private fun DashboardEmptyCard(
 private fun DashboardLoadingCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1253,14 +1431,17 @@ private fun DashboardLoadingCard() {
                 .padding(25.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            CircularProgressIndicator(color = Color(0xFF536DE8))
+            CircularProgressIndicator(
+                color = DashboardPrimary,
+                strokeWidth = 3.dp
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 "Loading your academic information...",
-                fontSize = 13.sp,
-                color = Color.Gray
+                fontSize = 12.sp,
+                color = DashboardMuted
             )
         }
     }

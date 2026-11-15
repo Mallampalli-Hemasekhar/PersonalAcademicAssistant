@@ -2,52 +2,51 @@
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun BottomNavScreen() {
-
+fun BottomNavScreen(
+    themeMode: String,
+    onThemeModeChange: (String) -> Unit,
+    onLogout: () -> Unit
+) {
     var selectedTab by remember { mutableStateOf("Home") }
     var selectedFeature by remember { mutableStateOf("Profile") }
 
     val navItems = listOf(
-        "Home",
-        "Schedule",
-        "Tasks",
-        "Progress",
-        "Profile"
+        "Home" to Icons.Default.Home,
+        "Schedule" to Icons.Default.CalendarMonth,
+        "Tasks" to Icons.Default.Assignment,
+        "Progress" to Icons.Default.BarChart,
+        "Profile" to Icons.Default.Person
     )
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar {
-                navItems.forEach { item ->
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 8.dp
+            ) {
+                navItems.forEach { (item, icon) ->
                     NavigationBarItem(
                         selected = selectedTab == item,
                         onClick = {
@@ -55,20 +54,28 @@ fun BottomNavScreen() {
                             selectedFeature = "Profile"
                         },
                         icon = {
-                            Text(
-                                text = when (item) {
-                                    "Home" -> "🏠"
-                                    "Schedule" -> "📅"
-                                    "Tasks" -> "📝"
-                                    "Progress" -> "📊"
-                                    else -> "👤"
-                                },
-                                fontSize = 20.sp
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = item
                             )
                         },
                         label = {
-                            Text(item)
-                        }
+                            Text(
+                                text = item,
+                                fontSize = 11.sp,
+                                fontWeight = if (selectedTab == item)
+                                    FontWeight.Bold
+                                else
+                                    FontWeight.Normal
+                            )
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }
@@ -81,24 +88,71 @@ fun BottomNavScreen() {
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-
                 "Home" -> DashboardScreen()
-
                 "Schedule" -> ScheduleScreen()
-
                 "Tasks" -> TasksScreen()
-
                 "Progress" -> ProgressScreen()
-
-                "Profile" -> {
-                    ProfileScreen(
-                        selectedFeature = selectedFeature,
-                        onFeatureSelected = {
-                            selectedFeature = it
-                        }
-                    )
-                }
+                "Profile" -> ProfileScreen(
+                    selectedFeature = selectedFeature,
+                    onFeatureSelected = {
+                        selectedFeature = it
+                    },
+                    themeMode = themeMode,
+                    onThemeModeChange = onThemeModeChange,
+                    onLogout = onLogout
+                )
             }
+        }
+    }
+}
+
+// --------------------------------------------------
+// REUSABLE MODERN SELECTION BUTTON
+// --------------------------------------------------
+
+@Composable
+fun ModernSelectionButton(
+    title: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val contentColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.height(52.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = containerColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = contentColor
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = title,
+                color = contentColor,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -109,7 +163,6 @@ fun BottomNavScreen() {
 
 @Composable
 fun ScheduleScreen() {
-
     var selectedSchedule by remember {
         mutableStateOf("Timetable")
     }
@@ -117,52 +170,48 @@ fun ScheduleScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-
         Text(
             text = "My Schedule",
-            fontSize = 25.sp,
+            fontSize = 27.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = "Manage your classes and examinations",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Button(
-            onClick = {
-                selectedSchedule = "Timetable"
-            },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedSchedule == "Timetable")
-                    Color(0xFF3F51B5)
-                else
-                    Color.Gray
-            )
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("📅 Timetable")
+            Box(modifier = Modifier.weight(1f)) {
+                ModernSelectionButton(
+                    title = "Timetable",
+                    icon = Icons.Default.CalendarMonth,
+                    selected = selectedSchedule == "Timetable",
+                    onClick = { selectedSchedule = "Timetable" }
+                )
+            }
+
+            Box(modifier = Modifier.weight(1f)) {
+                ModernSelectionButton(
+                    title = "Exams",
+                    icon = Icons.Default.School,
+                    selected = selectedSchedule == "Exams",
+                    onClick = { selectedSchedule = "Exams" }
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(
-            onClick = {
-                selectedSchedule = "Exams"
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedSchedule == "Exams")
-                    Color(0xFF3F51B5)
-                else
-                    Color.Gray
-            )
-        ) {
-            Text("📝 Exams")
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedSchedule) {
             "Timetable" -> TimetableScreen()
@@ -186,7 +235,6 @@ fun TasksScreen() {
 
 @Composable
 fun ProgressScreen() {
-
     var selectedProgress by remember {
         mutableStateOf("Attendance")
     }
@@ -194,52 +242,48 @@ fun ProgressScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-
         Text(
             text = "My Progress",
-            fontSize = 25.sp,
+            fontSize = 27.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = "Monitor your academic performance",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Button(
-            onClick = {
-                selectedProgress = "Attendance"
-            },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedProgress == "Attendance")
-                    Color(0xFF3F51B5)
-                else
-                    Color.Gray
-            )
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("📊 Attendance")
+            Box(modifier = Modifier.weight(1f)) {
+                ModernSelectionButton(
+                    title = "Attendance",
+                    icon = Icons.Default.EventAvailable,
+                    selected = selectedProgress == "Attendance",
+                    onClick = { selectedProgress = "Attendance" }
+                )
+            }
+
+            Box(modifier = Modifier.weight(1f)) {
+                ModernSelectionButton(
+                    title = "Analytics",
+                    icon = Icons.Default.Insights,
+                    selected = selectedProgress == "Performance",
+                    onClick = { selectedProgress = "Performance" }
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Button(
-            onClick = {
-                selectedProgress = "Performance"
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (selectedProgress == "Performance")
-                    Color(0xFF3F51B5)
-                else
-                    Color.Gray
-            )
-        ) {
-            Text("📈 Performance Analytics")
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         when (selectedProgress) {
             "Attendance" -> AttendanceScreen()
@@ -255,282 +299,509 @@ fun ProgressScreen() {
 @Composable
 fun ProfileScreen(
     selectedFeature: String,
-    onFeatureSelected: (String) -> Unit
+    onFeatureSelected: (String) -> Unit,
+    themeMode: String,
+    onThemeModeChange: (String) -> Unit,
+    onLogout: () -> Unit
 ) {
-
     when (selectedFeature) {
 
-        "Notes" -> {
-            FeatureContainer(Color(0xFF3F51B5), {
-                onFeatureSelected("Profile")
-            }) {
-                NotesScreen()
+        "Notes" -> FeatureContainer(Color(0xFF3F51B5), {
+            onFeatureSelected("Profile")
+        }) { NotesScreen() }
+
+        "GPA" -> FeatureContainer(Color(0xFF00897B), {
+            onFeatureSelected("Profile")
+        }) { GPAScreen() }
+
+        "StudyPlanner" -> FeatureContainer(Color(0xFF5E35B1), {
+            onFeatureSelected("Profile")
+        }) { StudyPlannerScreen() }
+
+        "DailyGoals" -> FeatureContainer(Color(0xFF039BE5), {
+            onFeatureSelected("Profile")
+        }) { DailyGoalsScreen() }
+
+        "Pomodoro" -> FeatureContainer(Color(0xFFE53935), {
+            onFeatureSelected("Profile")
+        }) { PomodoroScreen() }
+
+        "Reminders" -> FeatureContainer(Color(0xFFFB8C00), {
+            onFeatureSelected("Profile")
+        }) { ReminderScreen() }
+
+        "AIAssistant" -> FeatureContainer(Color(0xFF3949AB), {
+            onFeatureSelected("Profile")
+        }) { AIAssistantScreen() }
+
+        "AIDoubtSolver" -> FeatureContainer(Color(0xFF5E35B1), {
+            onFeatureSelected("Profile")
+        }) { AIDoubtSolverScreen() }
+
+        "AICodeExplainer" -> FeatureContainer(Color(0xFF1565C0), {
+            onFeatureSelected("Profile")
+        }) { AICodeExplainerScreen() }
+
+        "AIAssignmentHelper" -> FeatureContainer(Color(0xFF00897B), {
+            onFeatureSelected("Profile")
+        }) { AIAssignmentHelperScreen() }
+
+        "AIMockInterview" -> FeatureContainer(Color(0xFF3949AB), {
+            onFeatureSelected("Profile")
+        }) { AIMockInterviewScreen() }
+
+        "QuizGenerator" -> FeatureContainer(Color(0xFF7B1FA2), {
+            onFeatureSelected("Profile")
+        }) { QuizGeneratorScreen() }
+
+        "Flashcards" -> FeatureContainer(Color(0xFF00897B), {
+            onFeatureSelected("Profile")
+        }) { FlashcardScreen() }
+
+        "PDFSummarizer" -> FeatureContainer(Color(0xFF1565C0), {
+            onFeatureSelected("Profile")
+        }) { PDFSummarizerScreen() }
+
+        "StudyStreaks" -> FeatureContainer(Color(0xFFFF7043), {
+            onFeatureSelected("Profile")
+        }) { StudyStreakScreen() }
+
+        "AcademicResources" -> FeatureContainer(Color(0xFF00897B), {
+            onFeatureSelected("Profile")
+        }) { AcademicResourceScreen() }
+
+        "PreviousQuestionPapers" -> FeatureContainer(Color(0xFF3949AB), {
+            onFeatureSelected("Profile")
+        }) { PreviousQuestionPaperScreen() }
+
+        "SemesterProgress" -> FeatureContainer(Color(0xFF00897B), {
+            onFeatureSelected("Profile")
+        }) { SemesterProgressScreen() }
+
+        "AIStudyTimetable" -> FeatureContainer(Color(0xFF5E35B1), {
+            onFeatureSelected("Profile")
+        }) { AIStudyTimetableScreen() }
+
+        "StudyBuddy" -> FeatureContainer(Color(0xFF00897B), {
+            onFeatureSelected("Profile")
+        }) { StudyBuddyScreen() }
+
+        else -> ProfileHomeContent(
+            themeMode = themeMode,
+            onThemeModeChange = onThemeModeChange,
+            onFeatureSelected = onFeatureSelected,
+            onLogout = onLogout
+        )
+    }
+}
+
+// --------------------------------------------------
+// PROFILE HOME CONTENT
+// --------------------------------------------------
+
+@Composable
+fun ProfileHomeContent(
+    themeMode: String,
+    onThemeModeChange: (String) -> Unit,
+    onFeatureSelected: (String) -> Unit,
+    onLogout: () -> Unit
+) {
+    val user = FirebaseAuth.getInstance().currentUser
+    val studentName = user?.displayName
+        ?: user?.email?.substringBefore("@")
+        ?: "Student"
+    val studentEmail = user?.email ?: "No email available"
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
+            .padding(18.dp)
+    ) {
+        Text(
+            text = "My Profile",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Text(
+            text = "Manage your academic account and settings",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onPrimary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.School,
+                        contentDescription = "Student",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = studentName,
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = studentEmail,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+
+                    Spacer(modifier = Modifier.height(7.dp))
+
+                    Text(
+                        text = "Student Account",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
 
-        "GPA" -> {
-            FeatureContainer(Color(0xFF00897B), {
-                onFeatureSelected("Profile")
-            }) {
-                GPAScreen()
+        Spacer(modifier = Modifier.height(25.dp))
+
+        ProfileSectionTitle(
+            title = "Appearance",
+            subtitle = "Customize how your app looks"
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(modifier = Modifier.padding(15.dp)) {
+                ProfileThemeButton(
+                    title = "☀️ Light Mode",
+                    description = "Use the light appearance",
+                    selected = themeMode == "Light",
+                    onClick = { onThemeModeChange("Light") }
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 5.dp)
+                )
+
+                ProfileThemeButton(
+                    title = "🌙 Dark Mode",
+                    description = "Use the dark appearance",
+                    selected = themeMode == "Dark",
+                    onClick = { onThemeModeChange("Dark") }
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 5.dp)
+                )
+
+                ProfileThemeButton(
+                    title = "📱 System Default",
+                    description = "Follow your device settings",
+                    selected = themeMode == "System",
+                    onClick = { onThemeModeChange("System") }
+                )
             }
         }
 
-        "StudyPlanner" -> {
-            FeatureContainer(Color(0xFF5E35B1), {
-                onFeatureSelected("Profile")
-            }) {
-                StudyPlannerScreen()
+        Spacer(modifier = Modifier.height(25.dp))
+
+        ProfileSectionTitle(
+            title = "Academic Tools",
+            subtitle = "Manage your everyday academic activities"
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ProfileButton("📚 Academic Notes", Color(0xFF3F51B5)) {
+            onFeatureSelected("Notes")
+        }
+        ProfileButton("🎓 GPA / CGPA Calculator", Color(0xFF00897B)) {
+            onFeatureSelected("GPA")
+        }
+        ProfileButton("📅 Smart Study Planner", Color(0xFF5E35B1)) {
+            onFeatureSelected("StudyPlanner")
+        }
+        ProfileButton("🎯 Daily Goals", Color(0xFF039BE5)) {
+            onFeatureSelected("DailyGoals")
+        }
+        ProfileButton("⏱️ Pomodoro Study Timer", Color(0xFFE53935)) {
+            onFeatureSelected("Pomodoro")
+        }
+        ProfileButton("🔔 Notifications & Reminders", Color(0xFFFB8C00)) {
+            onFeatureSelected("Reminders")
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        ProfileSectionTitle(
+            title = "AI Study Tools",
+            subtitle = "Learn smarter with your AI assistant"
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ProfileButton("🤖 AI Academic Assistant", Color(0xFF3949AB)) {
+            onFeatureSelected("AIAssistant")
+        }
+        ProfileButton("💡 AI Academic Doubt Solver", Color(0xFF5E35B1)) {
+            onFeatureSelected("AIDoubtSolver")
+        }
+        ProfileButton("💻 AI Code Explainer", Color(0xFF1565C0)) {
+            onFeatureSelected("AICodeExplainer")
+        }
+        ProfileButton("📝 AI Assignment Helper", Color(0xFF00897B)) {
+            onFeatureSelected("AIAssignmentHelper")
+        }
+        ProfileButton("🎤 AI Mock Interview", Color(0xFF3949AB)) {
+            onFeatureSelected("AIMockInterview")
+        }
+        ProfileButton("📝 AI Quiz Generator", Color(0xFF7B1FA2)) {
+            onFeatureSelected("QuizGenerator")
+        }
+        ProfileButton("📚 AI Flashcard Generator", Color(0xFF00897B)) {
+            onFeatureSelected("Flashcards")
+        }
+        ProfileButton("📄 AI PDF Study Summarizer", Color(0xFF1565C0)) {
+            onFeatureSelected("PDFSummarizer")
+        }
+        ProfileButton("🤖 AI Study Timetable Generator", Color(0xFF5E35B1)) {
+            onFeatureSelected("AIStudyTimetable")
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        ProfileSectionTitle(
+            title = "Study Management",
+            subtitle = "Track your learning and academic progress"
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        ProfileButton("🔥 Study Streaks & Achievements", Color(0xFFFF7043)) {
+            onFeatureSelected("StudyStreaks")
+        }
+        ProfileButton("📚 Academic Resource Manager", Color(0xFF00897B)) {
+            onFeatureSelected("AcademicResources")
+        }
+        ProfileButton("📄 Previous Question Paper Manager", Color(0xFF3949AB)) {
+            onFeatureSelected("PreviousQuestionPapers")
+        }
+        ProfileButton("📊 Semester Progress Tracker", Color(0xFF00897B)) {
+            onFeatureSelected("SemesterProgress")
+        }
+        ProfileButton("👥 Study Buddy & Collaboration", Color(0xFF00897B)) {
+            onFeatureSelected("StudyBuddy")
+        }
+
+        Spacer(modifier = Modifier.height(25.dp))
+
+        ProfileSectionTitle(
+            title = "About",
+            subtitle = "Your personal academic companion"
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text(
+                    text = "🎓 Personal Academic Assistant",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Organize your studies, manage your schedule, track your progress, and learn smarter with AI-powered academic tools.",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 21.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Version 1.0",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
-        "DailyGoals" -> {
-            FeatureContainer(Color(0xFF039BE5), {
-                onFeatureSelected("Profile")
-            }) {
-                DailyGoalsScreen()
-            }
-        }
+        Spacer(modifier = Modifier.height(25.dp))
 
-        "Pomodoro" -> {
-            FeatureContainer(Color(0xFFE53935), {
-                onFeatureSelected("Profile")
-            }) {
-                PomodoroScreen()
-            }
-        }
+        ProfileSectionTitle(
+            title = "Account",
+            subtitle = "Manage your signed-in account"
+        )
 
-        "Reminders" -> {
-            FeatureContainer(Color(0xFFFB8C00), {
-                onFeatureSelected("Profile")
-            }) {
-                ReminderScreen()
-            }
-        }
+        Spacer(modifier = Modifier.height(10.dp))
 
-        "AIAssistant" -> {
-            FeatureContainer(Color(0xFF3949AB), {
-                onFeatureSelected("Profile")
-            }) {
-                AIAssistantScreen()
-            }
-        }
-
-        "AIDoubtSolver" -> {
-            FeatureContainer(Color(0xFF5E35B1), {
-                onFeatureSelected("Profile")
-            }) {
-                AIDoubtSolverScreen()
-            }
-        }
-
-        "AICodeExplainer" -> {
-            FeatureContainer(Color(0xFF1565C0), {
-                onFeatureSelected("Profile")
-            }) {
-                AICodeExplainerScreen()
-            }
-        }
-
-        "AIAssignmentHelper" -> {
-            FeatureContainer(Color(0xFF00897B), {
-                onFeatureSelected("Profile")
-            }) {
-                AIAssignmentHelperScreen()
-            }
-        }
-
-        // FEATURE 30: AI MOCK INTERVIEW
-
-        "AIMockInterview" -> {
-            FeatureContainer(Color(0xFF3949AB), {
-                onFeatureSelected("Profile")
-            }) {
-                AIMockInterviewScreen()
-            }
-        }
-
-        "QuizGenerator" -> {
-            FeatureContainer(Color(0xFF7B1FA2), {
-                onFeatureSelected("Profile")
-            }) {
-                QuizGeneratorScreen()
-            }
-        }
-
-        "Flashcards" -> {
-            FeatureContainer(Color(0xFF00897B), {
-                onFeatureSelected("Profile")
-            }) {
-                FlashcardScreen()
-            }
-        }
-
-        "PDFSummarizer" -> {
-            FeatureContainer(Color(0xFF1565C0), {
-                onFeatureSelected("Profile")
-            }) {
-                PDFSummarizerScreen()
-            }
-        }
-
-        "StudyStreaks" -> {
-            FeatureContainer(Color(0xFFFF7043), {
-                onFeatureSelected("Profile")
-            }) {
-                StudyStreakScreen()
-            }
-        }
-
-        "AcademicResources" -> {
-            FeatureContainer(Color(0xFF00897B), {
-                onFeatureSelected("Profile")
-            }) {
-                AcademicResourceScreen()
-            }
-        }
-
-        "PreviousQuestionPapers" -> {
-            FeatureContainer(Color(0xFF3949AB), {
-                onFeatureSelected("Profile")
-            }) {
-                PreviousQuestionPaperScreen()
-            }
-        }
-
-        "SemesterProgress" -> {
-            FeatureContainer(Color(0xFF00897B), {
-                onFeatureSelected("Profile")
-            }) {
-                SemesterProgressScreen()
-            }
-        }
-
-        "AIStudyTimetable" -> {
-            FeatureContainer(Color(0xFF5E35B1), {
-                onFeatureSelected("Profile")
-            }) {
-                AIStudyTimetableScreen()
-            }
-        }
-
-        "StudyBuddy" -> {
-            FeatureContainer(Color(0xFF00897B), {
-                onFeatureSelected("Profile")
-            }) {
-                StudyBuddyScreen()
-            }
-        }
-
-        else -> {
-
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF5F7FB))
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-
                 Text(
-                    text = "My Profile",
-                    fontSize = 27.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF172554)
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "Personal Academic Assistant",
+                    text = "Sign out of your account",
                     fontSize = 15.sp,
-                    color = Color.Gray
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(25.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                ProfileButton("📚 Academic Notes", Color(0xFF3F51B5)) {
-                    onFeatureSelected("Notes")
+                Text(
+                    text = "You can log in again anytime using your email and password.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(15.dp))
+
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(
+                        text = "Logout",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
+            }
+        }
 
-                ProfileButton("🎓 GPA / CGPA Calculator", Color(0xFF00897B)) {
-                    onFeatureSelected("GPA")
-                }
+        Spacer(modifier = Modifier.height(30.dp))
+    }
+}
 
-                ProfileButton("📅 Smart Study Planner", Color(0xFF5E35B1)) {
-                    onFeatureSelected("StudyPlanner")
-                }
+// --------------------------------------------------
+// PROFILE SECTION TITLE
+// --------------------------------------------------
 
-                ProfileButton("🎯 Daily Goals", Color(0xFF039BE5)) {
-                    onFeatureSelected("DailyGoals")
-                }
+@Composable
+fun ProfileSectionTitle(
+    title: String,
+    subtitle: String
+) {
+    Column {
+        Text(
+            text = title,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
 
-                ProfileButton("⏱️ Pomodoro Study Timer", Color(0xFFE53935)) {
-                    onFeatureSelected("Pomodoro")
-                }
+        Spacer(modifier = Modifier.height(3.dp))
 
-                ProfileButton("🔔 Notifications & Reminders", Color(0xFFFB8C00)) {
-                    onFeatureSelected("Reminders")
-                }
+        Text(
+            text = subtitle,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-                ProfileButton("🤖 AI Academic Assistant", Color(0xFF3949AB)) {
-                    onFeatureSelected("AIAssistant")
-                }
+// --------------------------------------------------
+// PROFILE THEME BUTTON
+// --------------------------------------------------
 
-                ProfileButton("💡 AI Academic Doubt Solver", Color(0xFF5E35B1)) {
-                    onFeatureSelected("AIDoubtSolver")
-                }
+@Composable
+fun ProfileThemeButton(
+    title: String,
+    description: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(
+            horizontal = 8.dp,
+            vertical = 10.dp
+        )
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-                ProfileButton("💻 AI Code Explainer", Color(0xFF1565C0)) {
-                    onFeatureSelected("AICodeExplainer")
-                }
+                Text(
+                    text = description,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-                ProfileButton("📝 AI Assignment Helper", Color(0xFF00897B)) {
-                    onFeatureSelected("AIAssignmentHelper")
-                }
-
-                ProfileButton("🎤 AI Mock Interview", Color(0xFF3949AB)) {
-                    onFeatureSelected("AIMockInterview")
-                }
-
-                ProfileButton("📝 AI Quiz Generator", Color(0xFF7B1FA2)) {
-                    onFeatureSelected("QuizGenerator")
-                }
-
-                ProfileButton("📚 AI Flashcard Generator", Color(0xFF00897B)) {
-                    onFeatureSelected("Flashcards")
-                }
-
-                ProfileButton("📄 AI PDF Study Summarizer", Color(0xFF1565C0)) {
-                    onFeatureSelected("PDFSummarizer")
-                }
-
-                ProfileButton("🔥 Study Streaks & Achievements", Color(0xFFFF7043)) {
-                    onFeatureSelected("StudyStreaks")
-                }
-
-                ProfileButton("📚 Academic Resource Manager", Color(0xFF00897B)) {
-                    onFeatureSelected("AcademicResources")
-                }
-
-                ProfileButton("📄 Previous Question Paper Manager", Color(0xFF3949AB)) {
-                    onFeatureSelected("PreviousQuestionPapers")
-                }
-
-                ProfileButton("📊 Semester Progress Tracker", Color(0xFF00897B)) {
-                    onFeatureSelected("SemesterProgress")
-                }
-
-                ProfileButton("🤖 AI Study Timetable Generator", Color(0xFF5E35B1)) {
-                    onFeatureSelected("AIStudyTimetable")
-                }
-
-                ProfileButton("👥 Study Buddy & Collaboration", Color(0xFF00897B)) {
-                    onFeatureSelected("StudyBuddy")
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Selected",
+                    tint = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -546,19 +817,24 @@ fun ProfileButton(
     color: Color,
     onClick: () -> Unit
 ) {
-
     Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 7.dp),
+            .padding(vertical = 5.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = color
+        ),
+        contentPadding = PaddingValues(
+            horizontal = 16.dp,
+            vertical = 14.dp
         )
     ) {
         Text(
             text = text,
-            fontSize = 16.sp
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -573,13 +849,11 @@ fun FeatureContainer(
     onBack: () -> Unit,
     content: @Composable () -> Unit
 ) {
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(MaterialTheme.colorScheme.background)
     ) {
-
         Button(
             onClick = onBack,
             modifier = Modifier.padding(12.dp),

@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    implementation("androidx.compose.material:material-icons-extended")
+
     // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
     implementation("com.google.firebase:firebase-ai")
