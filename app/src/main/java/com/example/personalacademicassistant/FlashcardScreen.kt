@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,6 +30,8 @@ private data class StudyFlashcard(
 @Composable
 fun FlashcardScreen() {
 
+    val colorScheme = MaterialTheme.colorScheme
+
     var subject by remember { mutableStateOf("") }
     var topic by remember { mutableStateOf("") }
 
@@ -42,6 +43,7 @@ fun FlashcardScreen() {
     var isFlipped by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
+
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
 
@@ -53,8 +55,6 @@ fun FlashcardScreen() {
             useLimitedUseAppCheckTokens = true
         ).generativeModel("gemini-3.5-flash")
     }
-
-    // GENERATE FLASHCARDS
 
     fun generateFlashcards() {
 
@@ -130,7 +130,9 @@ fun FlashcardScreen() {
                 }
 
                 if (generatedCards.size != 10) {
-                    throw Exception("Gemini did not generate exactly 10 flashcards.")
+                    throw Exception(
+                        "Gemini did not generate exactly 10 flashcards."
+                    )
                 }
 
                 flashcards = generatedCards
@@ -145,8 +147,6 @@ fun FlashcardScreen() {
             }
         }
     }
-
-    // SAVE FLASHCARDS TO FIRESTORE
 
     fun saveFlashcards() {
 
@@ -194,78 +194,172 @@ fun FlashcardScreen() {
             }
     }
 
-    // SCREEN UI
-
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
 
-        Text(
-            text = "📚 AI Flashcard Generator",
-            fontSize = 23.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
-        )
+        // HEADER
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colorScheme.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(22.dp)
+            ) {
 
-        Text(
-            text = "Create smart study cards using Gemini AI.",
-            color = Color.Gray
-        )
+                Text(
+                    text = "📚 AI Flashcards",
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colorScheme.onPrimaryContainer
+                )
 
-        Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Learn smarter with AI-powered study cards.",
+                    fontSize = 14.sp,
+                    color = colorScheme.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "✦ Powered by Gemini AI",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(22.dp))
 
         // INPUT SECTION
 
         if (flashcards.isEmpty()) {
 
-            OutlinedTextField(
-                value = subject,
-                onValueChange = { subject = it },
-                label = { Text("Enter Subject") },
-                placeholder = { Text("Example: Data Structures") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+            Text(
+                text = "Create Your Flashcards",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            OutlinedTextField(
-                value = topic,
-                onValueChange = { topic = it },
-                label = { Text("Enter Topic") },
-                placeholder = { Text("Example: Linked Lists") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+            Text(
+                text = "Enter a subject and topic to generate 10 study cards.",
+                color = colorScheme.onSurfaceVariant,
+                fontSize = 14.sp
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            OutlinedTextField(
+                value = subject,
+                onValueChange = { subject = it },
+                label = { Text("Subject") },
+                placeholder = { Text("Example: Data Structures") },
+                leadingIcon = {
+                    Text("📘")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedTextField(
+                value = topic,
+                onValueChange = { topic = it },
+                label = { Text("Topic") },
+                placeholder = { Text("Example: Linked Lists") },
+                leadingIcon = {
+                    Text("📝")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(22.dp))
+
             Button(
                 onClick = { generateFlashcards() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                enabled = !isLoading,
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Generate Flashcards with AI")
+                Text(
+                    text = if (isLoading) {
+                        "Generating..."
+                    } else {
+                        "✨ Generate Flashcards"
+                    },
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             if (isLoading) {
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
+                Spacer(modifier = Modifier.height(12.dp))
+
                 Text(
-                    "Gemini is creating your flashcards...",
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    text = "Gemini is creating your flashcards...",
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    color = colorScheme.onSurfaceVariant
                 )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // FEATURE INFORMATION
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = colorScheme.surfaceVariant
+                ),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+
+                    Text(
+                        text = "How it works",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("1. Enter your subject and topic.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("2. Generate 10 AI-powered flashcards.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("3. Tap a card to reveal its answer.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("4. Save your cards to Firebase.")
+                }
             }
         }
 
@@ -274,22 +368,40 @@ fun FlashcardScreen() {
         else {
 
             Text(
-                text = "Subject: $subject",
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF3F51B5)
+                text = subject,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "Topic: $topic",
-                color = Color.Gray
+                text = topic,
+                color = colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "Card ${currentIndex + 1} of ${flashcards.size}",
-                fontWeight = FontWeight.SemiBold
-            )
+            // PROGRESS
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Text(
+                    text = "Your Learning Progress",
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = "${currentIndex + 1} / ${flashcards.size}",
+                    color = colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             LinearProgressIndicator(
                 progress = {
@@ -297,24 +409,28 @@ fun FlashcardScreen() {
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp)
+                    .height(8.dp),
+                color = colorScheme.primary,
+                trackColor = colorScheme.surfaceVariant
             )
 
-            // CLICKABLE FLASHCARD
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // FLIP CARD
 
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 230.dp)
+                    .heightIn(min = 260.dp)
                     .clickable {
                         isFlipped = !isFlipped
                     },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = if (isFlipped) {
-                        Color(0xFFE8EAF6)
+                        colorScheme.secondaryContainer
                     } else {
-                        Color(0xFF3F51B5)
+                        colorScheme.primary
                     }
                 ),
                 elevation = CardDefaults.cardElevation(
@@ -325,20 +441,25 @@ fun FlashcardScreen() {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(min = 260.dp)
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
 
                     Text(
-                        text = if (isFlipped) "ANSWER" else "QUESTION",
-                        color = if (isFlipped) {
-                            Color(0xFF3F51B5)
+                        text = if (isFlipped) {
+                            "ANSWER"
                         } else {
-                            Color.White
+                            "QUESTION"
                         },
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
+                        color = if (isFlipped) {
+                            colorScheme.onSecondaryContainer
+                        } else {
+                            colorScheme.onPrimary
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -349,32 +470,36 @@ fun FlashcardScreen() {
                         } else {
                             flashcards[currentIndex].question
                         },
+                        fontSize = 21.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = if (isFlipped) {
-                            Color(0xFF172554)
+                            colorScheme.onSecondaryContainer
                         } else {
-                            Color.White
-                        },
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium
+                            colorScheme.onPrimary
+                        }
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
                     Text(
-                        text = "Tap card to ${if (isFlipped) "see question" else "reveal answer"}",
-                        color = if (isFlipped) {
-                            Color.Gray
+                        text = if (isFlipped) {
+                            "Tap to see the question ↩"
                         } else {
-                            Color.White
+                            "Tap to reveal the answer ↻"
                         },
-                        fontSize = 13.sp
+                        fontSize = 13.sp,
+                        color = if (isFlipped) {
+                            colorScheme.onSecondaryContainer
+                        } else {
+                            colorScheme.onPrimary
+                        }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-            // PREVIOUS AND NEXT BUTTONS
+            // NAVIGATION
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -388,8 +513,11 @@ fun FlashcardScreen() {
                             isFlipped = false
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                    enabled = currentIndex > 0
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    enabled = currentIndex > 0,
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Text("← Previous")
                 }
@@ -401,31 +529,39 @@ fun FlashcardScreen() {
                             isFlipped = false
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                    enabled = currentIndex < flashcards.size - 1
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp),
+                    enabled = currentIndex < flashcards.size - 1,
+                    shape = RoundedCornerShape(14.dp)
                 ) {
                     Text("Next →")
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // SAVE BUTTON
+            // SAVE FLASHCARDS
 
             Button(
                 onClick = { saveFlashcards() },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isSaving
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                enabled = !isSaving,
+                shape = RoundedCornerShape(14.dp)
             ) {
-
                 Text(
-                    if (isSaving) {
+                    text = if (isSaving) {
                         "Saving..."
                     } else {
-                        "Save Flashcards"
-                    }
+                        "💾 Save Flashcards"
+                    },
+                    fontSize = 15.sp
                 )
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedButton(
                 onClick = {
@@ -435,7 +571,10 @@ fun FlashcardScreen() {
                     errorMessage = ""
                     successMessage = ""
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Text("Generate New Flashcards")
             }
@@ -445,27 +584,36 @@ fun FlashcardScreen() {
 
         if (successMessage.isNotEmpty()) {
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            Text(
-                text = successMessage,
-                color = Color(0xFF2E7D32),
-                fontWeight = FontWeight.Bold
-            )
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = colorScheme.primaryContainer
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "✓ $successMessage",
+                    modifier = Modifier.padding(14.dp),
+                    color = colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
         }
 
         // ERROR MESSAGE
 
         if (errorMessage.isNotEmpty()) {
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = errorMessage,
-                color = MaterialTheme.colorScheme.error
+                color = colorScheme.error,
+                fontSize = 14.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }

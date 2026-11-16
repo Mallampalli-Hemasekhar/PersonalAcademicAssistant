@@ -8,9 +8,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -32,7 +35,9 @@ fun SemesterProgressScreen() {
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     val db = FirebaseFirestore.getInstance()
 
-    val semesters = remember { mutableStateListOf<SemesterItem>() }
+    val semesters = remember {
+        mutableStateListOf<SemesterItem>()
+    }
 
     var semesterName by remember { mutableStateOf("") }
     var subjectName by remember { mutableStateOf("") }
@@ -57,27 +62,33 @@ fun SemesterProgressScreen() {
         }
     }
 
-    // FIRESTORE DATA LISTENER
+    val colors = MaterialTheme.colorScheme
+
+    // Firestore listener
+
     DisposableEffect(collection) {
 
         if (collection == null) {
+
             loading = false
             onDispose { }
+
         } else {
 
             val registration = collection.addSnapshotListener { snapshot, error ->
 
                 if (error != null) {
+
                     errorMessage = error.message ?: "Unable to load semesters."
                     loading = false
+
                 } else if (snapshot != null) {
 
                     semesters.clear()
 
                     snapshot.documents.forEach { document ->
 
-                        val subjectList =
-                            document.get("subjects") as? List<*>
+                        val subjectList = document.get("subjects") as? List<*>
 
                         val parsedSubjects = subjectList?.mapNotNull { item ->
 
@@ -86,19 +97,15 @@ fun SemesterProgressScreen() {
 
                             SemesterSubject(
                                 name = map["name"] as? String ?: "",
-                                totalTopics =
-                                    (map["totalTopics"] as? Number)?.toInt() ?: 0,
-                                completedTopics =
-                                    (map["completedTopics"] as? Number)?.toInt() ?: 0
+                                totalTopics = (map["totalTopics"] as? Number)?.toInt() ?: 0,
+                                completedTopics = (map["completedTopics"] as? Number)?.toInt() ?: 0
                             )
-
                         } ?: emptyList()
 
                         semesters.add(
                             SemesterItem(
                                 id = document.id,
-                                name = document.getString("semesterName")
-                                    ?: "Semester",
+                                name = document.getString("semesterName") ?: "Semester",
                                 subjects = parsedSubjects
                             )
                         )
@@ -114,7 +121,8 @@ fun SemesterProgressScreen() {
         }
     }
 
-    // SAVE SUBJECTS TO FIRESTORE
+    // Save subjects
+
     fun saveSubjects(
         semester: SemesterItem,
         updatedSubjects: List<SemesterSubject>
@@ -138,68 +146,198 @@ fun SemesterProgressScreen() {
             }
     }
 
-    // LOGIN CHECK
+    // Login check
+
     if (userId == null) {
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp)
+                .padding(20.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Please log in to use Semester Progress Tracker.")
+
+            Text(
+                text = "Please log in to use Semester Progress Tracker.",
+                color = colors.onBackground
+            )
         }
 
         return
     }
 
+    val totalTopicsOverall = semesters.sumOf { semester ->
+        semester.subjects.sumOf { it.totalTopics }
+    }
+
+    val completedTopicsOverall = semesters.sumOf { semester ->
+        semester.subjects.sumOf { it.completedTopics }
+    }
+
+    val overallProgress = if (totalTopicsOverall > 0) {
+        completedTopicsOverall.toFloat() / totalTopicsOverall.toFloat()
+    } else {
+        0f
+    }
+
+    val remainingTopics = (totalTopicsOverall - completedTopicsOverall).coerceAtLeast(0)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .imePadding()
-            .padding(16.dp)
+            .padding(18.dp)
     ) {
 
         Text(
-            text = "Semester Progress Tracker",
-            style = MaterialTheme.typography.headlineSmall
+            text = "📊 Semester Progress",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.onBackground
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Track your syllabus completion across semesters.",
-            style = MaterialTheme.typography.bodyMedium
+            text = "Monitor your syllabus completion across semesters.",
+            fontSize = 14.sp,
+            color = colors.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        // ADD SEMESTER BUTTON
+        // Overall progress card
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colors.primaryContainer
+            )
+        ) {
+
+            Column(
+                modifier = Modifier.padding(18.dp)
+            ) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = "Overall Syllabus Progress",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+
+                    Text(
+                        text = "${(overallProgress * 100).toInt()}%",
+                        fontSize = 23.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                LinearProgressIndicator(
+                    progress = { overallProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(9.dp),
+                    color = colors.primary,
+                    trackColor = colors.surface
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "$completedTopicsOverall of $totalTopicsOverall topics completed",
+                    fontSize = 13.sp,
+                    color = colors.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Statistics
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+
+            SemesterStatCard(
+                title = "Semesters",
+                value = semesters.size.toString(),
+                modifier = Modifier.weight(1f)
+            )
+
+            SemesterStatCard(
+                title = "Completed",
+                value = completedTopicsOverall.toString(),
+                modifier = Modifier.weight(1f)
+            )
+
+            SemesterStatCard(
+                title = "Remaining",
+                value = remainingTopics.toString(),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // Add semester button
+
         Button(
             onClick = {
                 semesterName = ""
                 errorMessage = ""
                 showSemesterDialog = true
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !saving
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            enabled = !saving,
+            shape = RoundedCornerShape(13.dp)
         ) {
-            Text("＋ Add Semester")
+
+            Text(
+                text = "＋ Add New Semester",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
-        if (errorMessage.isNotEmpty()) {
+        if (errorMessage.isNotEmpty() && !showSemesterDialog && !showSubjectDialog) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall
+                color = colors.error,
+                fontSize = 13.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // SEMESTER LIST
+        Text(
+            text = "Your Semesters",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Semester list
+
         when {
 
             loading -> {
@@ -208,21 +346,53 @@ fun SemesterProgressScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    contentAlignment = Alignment.Center
                 ) {
+
                     CircularProgressIndicator()
                 }
             }
 
             semesters.isEmpty() -> {
 
-                Box(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = colors.surfaceVariant
+                    )
                 ) {
-                    Text("No semesters added yet. Add your first semester!")
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(25.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+
+                        Text(
+                            text = "📚",
+                            fontSize = 40.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = "No Semesters Yet",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.onSurface
+                        )
+
+                        Text(
+                            text = "Add your first semester to start tracking your syllabus.",
+                            fontSize = 13.sp,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -232,7 +402,7 @@ fun SemesterProgressScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
 
                     items(
@@ -240,208 +410,86 @@ fun SemesterProgressScreen() {
                         key = { it.id }
                     ) { semester ->
 
-                        val total =
-                            semester.subjects.sumOf { it.totalTopics }
-
-                        val completed =
-                            semester.subjects.sumOf { it.completedTopics }
-
-                        val progress =
-                            if (total > 0) {
-                                completed.toFloat() / total.toFloat()
-                            } else {
-                                0f
-                            }
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-
-                            Column(
-                                modifier = Modifier.padding(16.dp)
-                            ) {
-
-                                Text(
-                                    text = semester.name,
-                                    style = MaterialTheme.typography.titleLarge
-                                )
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = "Overall Progress: ${(progress * 100).toInt()}%"
-                                )
-
-                                LinearProgressIndicator(
-                                    progress = { progress },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp)
-                                )
-
-                                Text("$completed of $total topics completed")
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                HorizontalDivider()
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Text(
-                                    text = "Subjects",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-
-                                if (semester.subjects.isEmpty()) {
-                                    Text("No subjects added yet.")
-                                }
-
-                                // SUBJECT LIST
-                                semester.subjects.forEachIndexed { index, subject ->
-
-                                    val subjectProgress =
-                                        if (subject.totalTopics > 0) {
-                                            subject.completedTopics.toFloat() /
-                                                    subject.totalTopics.toFloat()
-                                        } else {
-                                            0f
-                                        }
-
-                                    Card(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 6.dp),
-                                        colors = CardDefaults.cardColors(
-                                            containerColor =
-                                                MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    ) {
-
-                                        Column(
-                                            modifier = Modifier.padding(12.dp)
-                                        ) {
-
-                                            Text(
-                                                text = subject.name,
-                                                style = MaterialTheme.typography.titleSmall
-                                            )
-
-                                            Text(
-                                                "${(subjectProgress * 100).toInt()}% completed"
-                                            )
-
-                                            LinearProgressIndicator(
-                                                progress = { subjectProgress },
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 6.dp)
-                                            )
-
-                                            Text(
-                                                "${subject.completedTopics} / ${subject.totalTopics} topics"
-                                            )
-
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.End
-                                            ) {
-
-                                                TextButton(
-                                                    onClick = {
-                                                        selectedSemester = semester
-                                                        editingIndex = index
-                                                        subjectName = subject.name
-                                                        totalTopics =
-                                                            subject.totalTopics.toString()
-                                                        completedTopics =
-                                                            subject.completedTopics.toString()
-                                                        errorMessage = ""
-                                                        showSubjectDialog = true
-                                                    }
-                                                ) {
-                                                    Text("Edit")
-                                                }
-
-                                                TextButton(
-                                                    onClick = {
-                                                        val updated =
-                                                            semester.subjects.toMutableList()
-
-                                                        updated.removeAt(index)
-
-                                                        saveSubjects(
-                                                            semester,
-                                                            updated
-                                                        )
-                                                    }
-                                                ) {
-                                                    Text(
-                                                        "Delete",
-                                                        color = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // ADD SUBJECT BUTTON
-                                Button(
-                                    onClick = {
-                                        selectedSemester = semester
-                                        editingIndex = -1
-                                        subjectName = ""
-                                        totalTopics = ""
-                                        completedTopics = ""
-                                        errorMessage = ""
-                                        showSubjectDialog = true
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("＋ Add Subject")
-                                }
-
-                                TextButton(
-                                    onClick = {
-                                        collection?.document(semester.id)
-                                            ?.delete()
-                                            ?.addOnFailureListener {
-                                                errorMessage =
-                                                    it.message ?: "Delete failed."
-                                            }
-                                    }
-                                ) {
-                                    Text(
-                                        "Delete Semester",
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
+                        val total = semester.subjects.sumOf {
+                            it.totalTopics
                         }
+
+                        val completed = semester.subjects.sumOf {
+                            it.completedTopics
+                        }
+
+                        val progress = if (total > 0) {
+                            completed.toFloat() / total.toFloat()
+                        } else {
+                            0f
+                        }
+
+                        SemesterProgressCard(
+                            semester = semester,
+                            progress = progress,
+                            total = total,
+                            completed = completed,
+                            onAddSubject = {
+
+                                selectedSemester = semester
+                                editingIndex = -1
+                                subjectName = ""
+                                totalTopics = ""
+                                completedTopics = ""
+                                errorMessage = ""
+                                showSubjectDialog = true
+                            },
+                            onEditSubject = { index, subject ->
+
+                                selectedSemester = semester
+                                editingIndex = index
+                                subjectName = subject.name
+                                totalTopics = subject.totalTopics.toString()
+                                completedTopics = subject.completedTopics.toString()
+                                errorMessage = ""
+                                showSubjectDialog = true
+                            },
+                            onDeleteSubject = { index ->
+
+                                val updated = semester.subjects.toMutableList()
+                                updated.removeAt(index)
+
+                                saveSubjects(semester, updated)
+                            },
+                            onDeleteSemester = {
+
+                                collection?.document(semester.id)
+                                    ?.delete()
+                                    ?.addOnFailureListener {
+                                        errorMessage = it.message ?: "Delete failed."
+                                    }
+                            }
+                        )
                     }
                 }
             }
         }
     }
 
-    // ADD SEMESTER DIALOG
+    // Add semester dialog
+
     if (showSemesterDialog) {
 
         AlertDialog(
             onDismissRequest = {
                 if (!saving) {
                     showSemesterDialog = false
+                    errorMessage = ""
                 }
             },
-
             title = {
-                Text("Add Semester")
+                Text(
+                    "Add Semester",
+                    fontWeight = FontWeight.Bold
+                )
             },
-
             text = {
+
                 Column {
 
                     OutlinedTextField(
@@ -457,19 +505,22 @@ fun SemesterProgressScreen() {
                         },
                         singleLine = true,
                         enabled = !saving,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     if (errorMessage.isNotEmpty()) {
+
                         Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
-                            errorMessage,
-                            color = MaterialTheme.colorScheme.error
+                            text = errorMessage,
+                            color = colors.error,
+                            fontSize = 13.sp
                         )
                     }
                 }
             },
-
             confirmButton = {
 
                 TextButton(
@@ -477,9 +528,13 @@ fun SemesterProgressScreen() {
                     onClick = {
 
                         if (semesterName.isBlank()) {
+
                             errorMessage = "Please enter a semester name."
+
                         } else if (collection == null) {
+
                             errorMessage = "Unable to connect to your account."
+
                         } else {
 
                             saving = true
@@ -492,30 +547,34 @@ fun SemesterProgressScreen() {
 
                             collection.add(semesterData)
                                 .addOnSuccessListener {
+
                                     saving = false
                                     showSemesterDialog = false
                                     semesterName = ""
                                 }
                                 .addOnFailureListener {
+
                                     saving = false
-                                    errorMessage =
-                                        it.message ?: "Unable to add semester."
+                                    errorMessage = it.message
+                                        ?: "Unable to add semester."
                                 }
                         }
                     }
                 ) {
 
                     if (saving) {
+
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp
                         )
+
                     } else {
+
                         Text("Save")
                     }
                 }
             },
-
             dismissButton = {
 
                 TextButton(
@@ -525,30 +584,34 @@ fun SemesterProgressScreen() {
                         errorMessage = ""
                     }
                 ) {
+
                     Text("Cancel")
                 }
-            }
+            },
+            shape = RoundedCornerShape(20.dp)
         )
     }
 
-    // ADD / EDIT SUBJECT DIALOG
+    // Add / edit subject dialog
+
     if (showSubjectDialog) {
 
         AlertDialog(
             onDismissRequest = {
                 showSubjectDialog = false
+                errorMessage = ""
             },
-
             title = {
+
                 Text(
-                    if (editingIndex == -1) {
+                    text = if (editingIndex == -1) {
                         "Add Subject"
                     } else {
                         "Edit Subject"
-                    }
+                    },
+                    fontWeight = FontWeight.Bold
                 )
             },
-
             text = {
 
                 Column {
@@ -561,15 +624,19 @@ fun SemesterProgressScreen() {
                         label = {
                             Text("Subject Name")
                         },
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     OutlinedTextField(
                         value = totalTopics,
                         onValueChange = {
-                            totalTopics = it
+                            if (it.all { char -> char.isDigit() }) {
+                                totalTopics = it
+                            }
                         },
                         label = {
                             Text("Total Topics")
@@ -577,15 +644,19 @@ fun SemesterProgressScreen() {
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     OutlinedTextField(
                         value = completedTopics,
                         onValueChange = {
-                            completedTopics = it
+                            if (it.all { char -> char.isDigit() }) {
+                                completedTopics = it
+                            }
                         },
                         label = {
                             Text("Completed Topics")
@@ -593,19 +664,23 @@ fun SemesterProgressScreen() {
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
                     )
 
                     if (errorMessage.isNotEmpty()) {
+
                         Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
-                            errorMessage,
-                            color = MaterialTheme.colorScheme.error
+                            text = errorMessage,
+                            color = colors.error,
+                            fontSize = 12.sp
                         )
                     }
                 }
             },
-
             confirmButton = {
 
                 TextButton(
@@ -614,21 +689,29 @@ fun SemesterProgressScreen() {
                         val total = totalTopics.toIntOrNull()
                         val completed = completedTopics.toIntOrNull()
 
-                        if (
-                            subjectName.isNotBlank() &&
-                            total != null &&
-                            completed != null &&
-                            total > 0 &&
-                            completed >= 0 &&
-                            completed <= total
+                        if (subjectName.isBlank()) {
+
+                            errorMessage = "Please enter a subject name."
+
+                        } else if (total == null || total <= 0) {
+
+                            errorMessage = "Enter a valid total topic count."
+
+                        } else if (
+                            completed == null ||
+                            completed < 0 ||
+                            completed > total
                         ) {
+
+                            errorMessage = "Completed topics cannot exceed total topics."
+
+                        } else {
 
                             val semester = selectedSemester
 
                             if (semester != null) {
 
-                                val updated =
-                                    semester.subjects.toMutableList()
+                                val updated = semester.subjects.toMutableList()
 
                                 val newSubject = SemesterSubject(
                                     name = subjectName.trim(),
@@ -637,8 +720,11 @@ fun SemesterProgressScreen() {
                                 )
 
                                 if (editingIndex == -1) {
+
                                     updated.add(newSubject)
+
                                 } else if (editingIndex in updated.indices) {
+
                                     updated[editingIndex] = newSubject
                                 }
 
@@ -647,18 +733,13 @@ fun SemesterProgressScreen() {
                                 showSubjectDialog = false
                                 errorMessage = ""
                             }
-
-                        } else {
-
-                            errorMessage =
-                                "Enter valid values. Completed topics cannot exceed total topics."
                         }
                     }
                 ) {
+
                     Text("Save")
                 }
             },
-
             dismissButton = {
 
                 TextButton(
@@ -667,9 +748,300 @@ fun SemesterProgressScreen() {
                         errorMessage = ""
                     }
                 ) {
+
                     Text("Cancel")
                 }
-            }
+            },
+            shape = RoundedCornerShape(20.dp)
         )
+    }
+}
+
+// Semester progress card
+
+@Composable
+private fun SemesterProgressCard(
+    semester: SemesterItem,
+    progress: Float,
+    total: Int,
+    completed: Int,
+    onAddSubject: () -> Unit,
+    onEditSubject: (Int, SemesterSubject) -> Unit,
+    onDeleteSubject: (Int) -> Unit,
+    onDeleteSemester: () -> Unit
+) {
+
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = semester.name,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSurface
+                    )
+
+                    Text(
+                        text = "${semester.subjects.size} subjects",
+                        fontSize = 12.sp,
+                        color = colors.onSurfaceVariant
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = colors.primaryContainer
+                ) {
+
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        modifier = Modifier.padding(
+                            horizontal = 12.dp,
+                            vertical = 7.dp
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = colors.primary,
+                trackColor = colors.surfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Text(
+                    text = "$completed / $total topics",
+                    fontSize = 12.sp,
+                    color = colors.onSurfaceVariant
+                )
+
+                Text(
+                    text = "${(total - completed).coerceAtLeast(0)} remaining",
+                    fontSize = 12.sp,
+                    color = colors.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            HorizontalDivider(
+                color = colors.outlineVariant
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Subject Breakdown",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.onSurface
+            )
+
+            if (semester.subjects.isEmpty()) {
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = "No subjects added yet.",
+                    fontSize = 13.sp,
+                    color = colors.onSurfaceVariant
+                )
+            }
+
+            semester.subjects.forEachIndexed { index, subject ->
+
+                val subjectProgress = if (subject.totalTopics > 0) {
+                    subject.completedTopics.toFloat() / subject.totalTopics.toFloat()
+                } else {
+                    0f
+                }
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = colors.surfaceVariant
+                    )
+                ) {
+
+                    Column(
+                        modifier = Modifier.padding(12.dp)
+                    ) {
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(
+                                text = subject.name,
+                                modifier = Modifier.weight(1f),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = colors.onSurface
+                            )
+
+                            Text(
+                                text = "${(subjectProgress * 100).toInt()}%",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = colors.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LinearProgressIndicator(
+                            progress = { subjectProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp),
+                            color = colors.secondary,
+                            trackColor = colors.surface
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "${subject.completedTopics} / ${subject.totalTopics} topics completed",
+                            fontSize = 11.sp,
+                            color = colors.onSurfaceVariant
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+
+                            TextButton(
+                                onClick = {
+                                    onEditSubject(index, subject)
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+
+                                Text("Edit")
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    onDeleteSubject(index)
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+
+                                Text(
+                                    text = "Delete",
+                                    color = colors.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Button(
+                onClick = onAddSubject,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+
+                Text("＋ Add Subject")
+            }
+
+            TextButton(
+                onClick = onDeleteSemester,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                Text(
+                    text = "Delete Semester",
+                    color = colors.error
+                )
+            }
+        }
+    }
+}
+
+// Statistics card
+
+@Composable
+private fun SemesterStatCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp, horizontal = 6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Text(
+                text = value,
+                fontSize = 21.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = title,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }

@@ -1,33 +1,15 @@
+
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,43 +31,24 @@ data class Exam(
 @Composable
 fun ExamScreen() {
 
-    var showAddExam by remember {
-        mutableStateOf(false)
-    }
+    var showAddExam by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf("") }
 
-    var isLoading by remember {
-        mutableStateOf(true)
-    }
+    val exams = remember { mutableStateListOf<Exam>() }
 
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
-
-    val exams = remember {
-        mutableStateListOf<Exam>()
-    }
-
-    val auth = remember {
-        FirebaseAuth.getInstance()
-    }
-
-    val firestore = remember {
-        FirebaseFirestore.getInstance()
-    }
-
+    val auth = remember { FirebaseAuth.getInstance() }
+    val firestore = remember { FirebaseFirestore.getInstance() }
     val currentUser = auth.currentUser
 
     LaunchedEffect(Unit) {
 
         if (currentUser == null) {
-
             errorMessage = "User is not logged in."
             isLoading = false
-
         } else {
 
-            firestore
-                .collection("users")
+            firestore.collection("users")
                 .document(currentUser.uid)
                 .collection("exams")
                 .get()
@@ -94,26 +57,22 @@ fun ExamScreen() {
                     exams.clear()
 
                     for (document in result.documents) {
-
-                        val exam = Exam(
-                            id = document.id,
-                            subject = document.getString("subject") ?: "",
-                            examType = document.getString("examType") ?: "",
-                            examDate = document.getString("examDate") ?: "",
-                            examTime = document.getString("examTime") ?: "",
-                            location = document.getString("location") ?: ""
+                        exams.add(
+                            Exam(
+                                id = document.id,
+                                subject = document.getString("subject") ?: "",
+                                examType = document.getString("examType") ?: "",
+                                examDate = document.getString("examDate") ?: "",
+                                examTime = document.getString("examTime") ?: "",
+                                location = document.getString("location") ?: ""
+                            )
                         )
-
-                        exams.add(exam)
                     }
 
                     isLoading = false
                 }
                 .addOnFailureListener { exception ->
-
-                    errorMessage =
-                        exception.message ?: "Failed to load exams."
-
+                    errorMessage = exception.message ?: "Failed to load exams."
                     isLoading = false
                 }
         }
@@ -122,216 +81,246 @@ fun ExamScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(MaterialTheme.colorScheme.background)
             .padding(20.dp)
     ) {
 
         Text(
-            text = "📝 Exams",
-            fontSize = 28.sp,
+            text = "Exam Management",
+            fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = MaterialTheme.colorScheme.onBackground
         )
 
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
+        Spacer(modifier = Modifier.height(5.dp))
 
         Text(
-            text = "Manage your upcoming examinations",
-            fontSize = 15.sp,
-            color = Color.Gray
+            text = "Organize and track your examinations",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+        Spacer(modifier = Modifier.height(20.dp))
 
-        Button(
-            onClick = {
-                showAddExam = true
-                errorMessage = ""
-            },
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF3F51B5)
-            )
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            ExamStatCard(
+                title = "Total Exams",
+                value = exams.size.toString(),
+                modifier = Modifier.weight(1f)
+            )
 
-            Text(
-                text = "+ Add Exam",
-                fontSize = 16.sp
+            ExamStatCard(
+                title = "Exam Types",
+                value = exams.map { it.examType }.distinct().size.toString(),
+                modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+        Spacer(modifier = Modifier.height(18.dp))
 
-        if (isLoading) {
+        Button(
+            onClick = {
+                errorMessage = ""
+                showAddExam = true
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Text(
+                text = "+ Add New Exam",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
 
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+        Spacer(modifier = Modifier.height(18.dp))
+
+        if (errorMessage.isNotEmpty()) {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                ),
+                modifier = Modifier.fillMaxWidth()
             ) {
-
-                Text(
-                    text = "Loading exams...",
-                    color = Color.Gray
-                )
-            }
-
-        } else if (errorMessage.isNotEmpty()) {
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-
-                Text(
-                    text = "⚠️",
-                    fontSize = 45.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
                 Text(
                     text = errorMessage,
-                    color = Color.Red
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(14.dp)
                 )
             }
 
-        } else if (exams.isEmpty()) {
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
 
+            exams.isEmpty() -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "📝", fontSize = 55.sp)
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "No Exams Yet",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "Add your examinations to keep track of them.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            else -> {
                 Text(
-                    text = "📝",
-                    fontSize = 50.sp
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-                Text(
-                    text = "No exams added yet",
+                    text = "Your Examinations",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF172554)
+                    color = MaterialTheme.colorScheme.onBackground
                 )
 
-                Text(
-                    text = "Add your first exam to get started.",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-            }
+                Spacer(modifier = Modifier.height(12.dp))
 
-        } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        items = exams,
+                        key = { it.id }
+                    ) { exam ->
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+                        ExamCard(
+                            exam = exam,
+                            onDelete = {
+                                currentUser?.let { user ->
 
-                items(
-                    items = exams,
-                    key = { it.id }
-                ) { exam ->
-
-                    ExamCard(
-                        exam = exam,
-                        onDelete = {
-
-                            currentUser?.let { user ->
-
-                                firestore
-                                    .collection("users")
-                                    .document(user.uid)
-                                    .collection("exams")
-                                    .document(exam.id)
-                                    .delete()
-                                    .addOnSuccessListener {
-
-                                        exams.remove(exam)
-                                    }
-                                    .addOnFailureListener { exception ->
-
-                                        errorMessage =
-                                            exception.message
+                                    firestore.collection("users")
+                                        .document(user.uid)
+                                        .collection("exams")
+                                        .document(exam.id)
+                                        .delete()
+                                        .addOnSuccessListener {
+                                            exams.remove(exam)
+                                        }
+                                        .addOnFailureListener { exception ->
+                                            errorMessage = exception.message
                                                 ?: "Failed to delete exam."
-                                    }
+                                        }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     }
 
     if (showAddExam) {
-
         AddExamDialog(
-
             onDismiss = {
                 showAddExam = false
             },
-
             onAddExam = { exam ->
 
                 if (currentUser == null) {
-
                     errorMessage = "User is not logged in."
                     showAddExam = false
-
                 } else {
 
                     val examData = hashMapOf(
-
                         "subject" to exam.subject,
-
                         "examType" to exam.examType,
-
                         "examDate" to exam.examDate,
-
                         "examTime" to exam.examTime,
-
                         "location" to exam.location
                     )
 
-                    firestore
-                        .collection("users")
+                    firestore.collection("users")
                         .document(currentUser.uid)
                         .collection("exams")
                         .add(examData)
                         .addOnSuccessListener { documentReference ->
 
                             exams.add(
-                                exam.copy(
-                                    id = documentReference.id
-                                )
+                                exam.copy(id = documentReference.id)
                             )
 
                             showAddExam = false
                             errorMessage = ""
                         }
                         .addOnFailureListener { exception ->
-
-                            errorMessage =
-                                exception.message
-                                    ?: "Failed to add exam."
+                            errorMessage = exception.message
+                                ?: "Failed to add exam."
                         }
                 }
             }
         )
+    }
+}
+
+@Composable
+fun ExamStatCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = value,
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
@@ -340,71 +329,73 @@ fun ExamCard(
     exam: Exam,
     onDelete: () -> Unit
 ) {
-
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-
         Column(
             modifier = Modifier.padding(18.dp)
         ) {
 
-            Text(
-                text = exam.subject,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = exam.subject,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Text(
+                            text = exam.examType,
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = 5.dp
+                            ),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            Spacer(
-                modifier = Modifier.height(6.dp)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "📌 Type: ${exam.examType}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
+            ExamInfoRow("📅", "Date", exam.examDate)
+            ExamInfoRow("⏰", "Time", exam.examTime)
+            ExamInfoRow("📍", "Location", exam.location)
 
-            Text(
-                text = "📅 Date: ${exam.examDate}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Text(
-                text = "⏰ Time: ${exam.examTime}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Text(
-                text = "🏫 Location: ${exam.location}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(10.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-
-                TextButton(
-                    onClick = {
-                        onDelete()
-                    }
-                ) {
-
+                TextButton(onClick = onDelete) {
                     Text(
-                        text = "Delete",
-                        color = Color.Red
+                        text = "Delete Exam",
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -413,34 +404,52 @@ fun ExamCard(
 }
 
 @Composable
+fun ExamInfoRow(
+    icon: String,
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = icon,
+            fontSize = 16.sp
+        )
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Text(
+            text = "$label:",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(70.dp)
+        )
+
+        Text(
+            text = value,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
 fun AddExamDialog(
     onDismiss: () -> Unit,
     onAddExam: (Exam) -> Unit
 ) {
-
-    var subject by remember {
-        mutableStateOf("")
-    }
-
-    var examType by remember {
-        mutableStateOf("")
-    }
-
-    var examDate by remember {
-        mutableStateOf("")
-    }
-
-    var examTime by remember {
-        mutableStateOf("")
-    }
-
-    var location by remember {
-        mutableStateOf("")
-    }
-
-    var expanded by remember {
-        mutableStateOf(false)
-    }
+    var subject by remember { mutableStateOf("") }
+    var examType by remember { mutableStateOf("") }
+    var examDate by remember { mutableStateOf("") }
+    var examTime by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var validationMessage by remember { mutableStateOf("") }
 
     val examTypes = listOf(
         "Internal",
@@ -452,163 +461,121 @@ fun AddExamDialog(
     )
 
     AlertDialog(
-
-        onDismissRequest = {
-            onDismiss()
-        },
-
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
         title = {
             Text(
-                text = "Add Exam",
+                text = "Add New Exam",
                 fontWeight = FontWeight.Bold
             )
         },
-
         text = {
-
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
 
                 OutlinedTextField(
                     value = subject,
                     onValueChange = {
                         subject = it
+                        validationMessage = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Subject")
-                    },
-                    placeholder = {
-                        Text("Example: DBMS")
-                    },
+                    label = { Text("Subject") },
+                    placeholder = { Text("Example: DBMS") },
                     singleLine = true
                 )
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
-                Column {
-
+                Box {
                     OutlinedTextField(
                         value = examType,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
-                        label = {
-                            Text("Exam Type")
-                        },
+                        label = { Text("Exam Type") },
+                        placeholder = { Text("Select exam type") },
                         readOnly = true,
                         singleLine = true
                     )
 
-                    Spacer(
-                        modifier = Modifier.height(5.dp)
-                    )
-
-                    Button(
-                        onClick = {
-                            expanded = true
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .padding(top = 8.dp)
                     ) {
-
-                        Text(
-                            text = if (examType.isEmpty()) {
-                                "Select Exam Type"
-                            } else {
-                                examType
-                            }
-                        )
+                        TextButton(
+                            onClick = { expanded = true },
+                            modifier = Modifier.fillMaxSize()
+                        ) {}
                     }
 
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = {
-                            expanded = false
-                        }
+                        onDismissRequest = { expanded = false }
                     ) {
-
-                        examTypes.forEach { selectedType ->
-
+                        examTypes.forEach { type ->
                             DropdownMenuItem(
-
-                                text = {
-                                    Text(selectedType)
-                                },
-
+                                text = { Text(type) },
                                 onClick = {
-
-                                    examType = selectedType
+                                    examType = type
                                     expanded = false
+                                    validationMessage = ""
                                 }
                             )
                         }
                     }
                 }
 
-                Spacer(
-                    modifier = Modifier.height(10.dp)
-                )
-
                 OutlinedTextField(
                     value = examDate,
                     onValueChange = {
                         examDate = it
+                        validationMessage = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Exam Date")
-                    },
-                    placeholder = {
-                        Text("Example: 25 Oct 2026")
-                    },
+                    label = { Text("Exam Date") },
+                    placeholder = { Text("Example: 25 Oct 2026") },
                     singleLine = true
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
                 )
 
                 OutlinedTextField(
                     value = examTime,
                     onValueChange = {
                         examTime = it
+                        validationMessage = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Exam Time")
-                    },
-                    placeholder = {
-                        Text("Example: 10:00 AM")
-                    },
+                    label = { Text("Exam Time") },
+                    placeholder = { Text("Example: 10:00 AM") },
                     singleLine = true
-                )
-
-                Spacer(
-                    modifier = Modifier.height(10.dp)
                 )
 
                 OutlinedTextField(
                     value = location,
                     onValueChange = {
                         location = it
+                        validationMessage = ""
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = {
-                        Text("Exam Location")
-                    },
-                    placeholder = {
-                        Text("Example: Block A - Hall 204")
-                    },
+                    label = { Text("Exam Location") },
+                    placeholder = { Text("Example: Block A - Hall 204") },
                     singleLine = true
                 )
+
+                if (validationMessage.isNotEmpty()) {
+                    Text(
+                        text = validationMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                }
             }
         },
-
         confirmButton = {
-
             Button(
                 onClick = {
-
                     if (
                         subject.isNotBlank() &&
                         examType.isNotBlank() &&
@@ -616,33 +583,25 @@ fun AddExamDialog(
                         examTime.isNotBlank() &&
                         location.isNotBlank()
                     ) {
-
                         onAddExam(
-
                             Exam(
-                                subject = subject,
+                                subject = subject.trim(),
                                 examType = examType,
-                                examDate = examDate,
-                                examTime = examTime,
-                                location = location
+                                examDate = examDate.trim(),
+                                examTime = examTime.trim(),
+                                location = location.trim()
                             )
                         )
+                    } else {
+                        validationMessage = "Please fill in all fields."
                     }
                 }
             ) {
-
-                Text("Add")
+                Text("Add Exam")
             }
         },
-
         dismissButton = {
-
-            TextButton(
-                onClick = {
-                    onDismiss()
-                }
-            ) {
-
+            TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
         }

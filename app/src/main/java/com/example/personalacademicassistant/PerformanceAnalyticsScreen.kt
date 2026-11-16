@@ -1,7 +1,6 @@
 
 package com.example.personalacademicassistant
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,16 +29,17 @@ fun PerformanceAnalyticsScreen() {
 
     val currentUser = FirebaseAuth.getInstance().currentUser
     val firestore = FirebaseFirestore.getInstance()
+    val colors = MaterialTheme.colorScheme
 
-    // Load GPA records from Firestore
     LaunchedEffect(currentUser?.uid) {
 
         if (currentUser == null) {
-
             errorMessage = "Please login to view your performance."
             isLoading = false
-
         } else {
+
+            isLoading = true
+            errorMessage = ""
 
             firestore.collection("users")
                 .document(currentUser.uid)
@@ -50,7 +50,6 @@ fun PerformanceAnalyticsScreen() {
                     subjects.clear()
 
                     for (document in result.documents) {
-
                         subjects.add(
                             GPASubject(
                                 id = document.id,
@@ -66,10 +65,8 @@ fun PerformanceAnalyticsScreen() {
                     isLoading = false
                 }
                 .addOnFailureListener { exception ->
-
                     errorMessage = exception.message
                         ?: "Unable to load performance data."
-
                     isLoading = false
                 }
         }
@@ -120,19 +117,24 @@ fun PerformanceAnalyticsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .padding(horizontal = 16.dp)
     ) {
 
         Text(
-            text = "Academic Performance",
+            text = "📈 Academic Performance",
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554),
+            color = colors.onBackground,
             modifier = Modifier.padding(
-                start = 16.dp,
-                top = 16.dp,
-                bottom = 10.dp
+                top = 18.dp,
+                bottom = 6.dp
             )
+        )
+
+        Text(
+            text = "Understand your academic progress",
+            fontSize = 14.sp,
+            color = colors.onSurfaceVariant
         )
 
         when {
@@ -140,22 +142,36 @@ fun PerformanceAnalyticsScreen() {
             isLoading -> {
 
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(
-                        color = Color(0xFF3F51B5)
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator()
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Loading performance data...",
+                            color = colors.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             errorMessage.isNotEmpty() -> {
 
-                Text(
-                    text = errorMessage,
-                    color = Color.Red,
-                    modifier = Modifier.padding(16.dp)
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = errorMessage,
+                        color = colors.error
+                    )
+                }
             }
 
             subjects.isEmpty() -> {
@@ -166,31 +182,54 @@ fun PerformanceAnalyticsScreen() {
                         .padding(20.dp),
                     contentAlignment = Alignment.Center
                 ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
 
-                    Text(
-                        text = "No GPA records found.\nAdd subjects in the GPA Calculator first.",
-                        fontSize = 16.sp,
-                        color = Color.Gray
-                    )
+                        Text(
+                            text = "📊",
+                            fontSize = 48.sp
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "No GPA records found",
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.onBackground
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "Add subjects in the GPA Calculator first.",
+                            fontSize = 14.sp,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
             else -> {
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        top = 18.dp,
+                        bottom = 24.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
 
-                    // Overall CGPA
                     item {
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(18.dp),
+                            shape = RoundedCornerShape(22.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF3F51B5)
+                                containerColor = colors.primary
                             )
                         ) {
 
@@ -203,13 +242,12 @@ fun PerformanceAnalyticsScreen() {
 
                                 Text(
                                     text = "Overall CGPA",
-                                    color = Color.White,
-                                    fontSize = 17.sp
+                                    color = colors.onPrimary,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
 
-                                Spacer(
-                                    modifier = Modifier.height(8.dp)
-                                )
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Text(
                                     text = String.format(
@@ -217,90 +255,147 @@ fun PerformanceAnalyticsScreen() {
                                         "%.2f",
                                         cgpa
                                     ),
-                                    color = Color.White,
-                                    fontSize = 42.sp,
+                                    color = colors.onPrimary,
+                                    fontSize = 44.sp,
                                     fontWeight = FontWeight.Bold
                                 )
 
                                 Text(
-                                    text = "Based on $totalCredits total credits",
-                                    color = Color.White
+                                    text = "Out of 10.00",
+                                    color = colors.onPrimary.copy(alpha = 0.8f),
+                                    fontSize = 13.sp
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                LinearProgressIndicator(
+                                    progress = {
+                                        (cgpa / 10.0)
+                                            .toFloat()
+                                            .coerceIn(0f, 1f)
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(9.dp),
+                                    color = colors.onPrimary,
+                                    trackColor = colors.onPrimary.copy(
+                                        alpha = 0.25f
+                                    )
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Text(
+                                    text = "Calculated from $totalCredits total credits",
+                                    color = colors.onPrimary,
+                                    fontSize = 13.sp
                                 )
                             }
                         }
                     }
 
-                    // Strongest subject
                     item {
 
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+
+                            PerformanceSummaryCard(
+                                title = "Total Subjects",
+                                value = subjects.size.toString(),
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            PerformanceSummaryCard(
+                                title = "Total Credits",
+                                value = totalCredits.toString(),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    item {
+                        Text(
+                            text = "Performance Highlights",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.onBackground
+                        )
+                    }
+
+                    item {
                         PerformanceInfoCard(
-                            title = "Strongest Subject",
+                            title = "🏆 Strongest Subject",
                             subject = strongestSubject?.subject ?: "",
                             grade = strongestSubject?.grade ?: "",
                             gradePoint = strongestSubject?.gradePoint ?: 0,
-                            cardColor = Color(0xFFE8F5E9)
+                            positive = true
                         )
                     }
 
-                    // Weakest subject
                     item {
-
                         PerformanceInfoCard(
-                            title = "Subject to Improve",
+                            title = "📚 Subject to Improve",
                             subject = weakestSubject?.subject ?: "",
                             grade = weakestSubject?.grade ?: "",
                             gradePoint = weakestSubject?.gradePoint ?: 0,
-                            cardColor = Color(0xFFFFF3E0)
+                            positive = false
                         )
                     }
 
-                    // Subject-wise performance
                     item {
-
                         Text(
                             text = "Subject-wise Performance",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF172554)
+                            color = colors.onBackground
                         )
                     }
 
-                    items(subjects) { subject ->
+                    items(
+                        items = subjects,
+                        key = { it.id }
+                    ) { subject ->
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(18.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color.White
+                                containerColor = colors.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 2.dp
                             )
                         ) {
 
                             Column(
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(17.dp)
                             ) {
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
 
                                     Text(
                                         text = subject.subject,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF172554),
+                                        fontSize = 16.sp,
+                                        color = colors.onSurface,
                                         modifier = Modifier.weight(1f)
                                     )
 
                                     Text(
                                         text = "${subject.gradePoint}/10",
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF3F51B5)
+                                        fontSize = 16.sp,
+                                        color = colors.primary
                                     )
                                 }
 
-                                Spacer(
-                                    modifier = Modifier.height(8.dp)
-                                )
+                                Spacer(modifier = Modifier.height(12.dp))
 
                                 LinearProgressIndicator(
                                     progress = {
@@ -310,31 +405,27 @@ fun PerformanceAnalyticsScreen() {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(9.dp),
-                                    color = Color(0xFF3F51B5),
-                                    trackColor = Color(0xFFE0E0E0)
+                                    color = colors.primary,
+                                    trackColor = colors.surfaceVariant
                                 )
 
-                                Spacer(
-                                    modifier = Modifier.height(6.dp)
-                                )
+                                Spacer(modifier = Modifier.height(10.dp))
 
                                 Text(
                                     text = "${subject.semester} • ${subject.credits} credits • Grade ${subject.grade}",
                                     fontSize = 12.sp,
-                                    color = Color.Gray
+                                    color = colors.onSurfaceVariant
                                 )
                             }
                         }
                     }
 
-                    // Semester-wise performance
                     item {
-
                         Text(
                             text = "Semester-wise Performance",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF172554)
+                            color = colors.onBackground
                         )
                     }
 
@@ -342,25 +433,30 @@ fun PerformanceAnalyticsScreen() {
 
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(18.dp),
                             colors = CardDefaults.cardColors(
-                                containerColor = Color.White
+                                containerColor = colors.surface
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 2.dp
                             )
                         ) {
 
                             Column(
-                                modifier = Modifier.padding(16.dp)
+                                modifier = Modifier.padding(17.dp)
                             ) {
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
 
                                     Text(
                                         text = semester.first,
+                                        fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF172554)
+                                        color = colors.onSurface
                                     )
 
                                     Text(
@@ -369,14 +465,13 @@ fun PerformanceAnalyticsScreen() {
                                             "%.2f",
                                             semester.second
                                         ),
+                                        fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF00897B)
+                                        color = colors.secondary
                                     )
                                 }
 
-                                Spacer(
-                                    modifier = Modifier.height(8.dp)
-                                )
+                                Spacer(modifier = Modifier.height(12.dp))
 
                                 LinearProgressIndicator(
                                     progress = {
@@ -387,18 +482,16 @@ fun PerformanceAnalyticsScreen() {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(9.dp),
-                                    color = Color(0xFF00897B),
-                                    trackColor = Color(0xFFE0E0E0)
+                                    color = colors.secondary,
+                                    trackColor = colors.surfaceVariant
                                 )
 
-                                Spacer(
-                                    modifier = Modifier.height(6.dp)
-                                )
+                                Spacer(modifier = Modifier.height(8.dp))
 
                                 Text(
                                     text = "${semester.third} total credits",
                                     fontSize = 12.sp,
-                                    color = Color.Gray
+                                    color = colors.onSurfaceVariant
                                 )
                             }
                         }
@@ -409,6 +502,44 @@ fun PerformanceAnalyticsScreen() {
     }
 }
 
+@Composable
+fun PerformanceSummaryCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(17.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surfaceVariant
+        )
+    ) {
+
+        Column(
+            modifier = Modifier.padding(17.dp)
+        ) {
+
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                color = colors.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = value,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.onSurface
+            )
+        }
+    }
+}
 
 @Composable
 fun PerformanceInfoCard(
@@ -416,41 +547,57 @@ fun PerformanceInfoCard(
     subject: String,
     grade: String,
     gradePoint: Int,
-    cardColor: Color
+    positive: Boolean
 ) {
+
+    val colors = MaterialTheme.colorScheme
+
+    val containerColor = if (positive) {
+        Color(0xFF1B8E61).copy(alpha = 0.12f)
+    } else {
+        colors.errorContainer
+    }
+
+    val contentColor = if (positive) {
+        Color(0xFF219653)
+    } else {
+        colors.onErrorContainer
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(17.dp),
         colors = CardDefaults.cardColors(
-            containerColor = cardColor
+            containerColor = containerColor
         )
     ) {
 
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(17.dp)
         ) {
 
             Text(
                 text = title,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
+                color = contentColor
             )
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
+            Spacer(modifier = Modifier.height(9.dp))
 
             Text(
                 text = subject,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = colors.onSurface
             )
+
+            Spacer(modifier = Modifier.height(5.dp))
 
             Text(
                 text = "Grade: $grade  |  Grade Points: $gradePoint",
-                color = Color.DarkGray
+                fontSize = 13.sp,
+                color = colors.onSurfaceVariant
             )
         }
     }

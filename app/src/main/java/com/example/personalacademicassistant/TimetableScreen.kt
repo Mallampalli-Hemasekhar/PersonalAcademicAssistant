@@ -6,34 +6,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,6 +48,17 @@ fun TimetableScreen() {
     val auth = remember { FirebaseAuth.getInstance() }
     val firestore = remember { FirebaseFirestore.getInstance() }
     val currentUser = auth.currentUser
+
+    val days = listOf(
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday"
+    )
+
+    val activeDays = timetableEntries.map { it.day }.distinct().size
 
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -148,128 +137,219 @@ fun TimetableScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
-            .padding(20.dp)
+            .padding(horizontal = 18.dp, vertical = 16.dp)
     ) {
 
         Text(
-            text = "📅 Timetable",
-            fontSize = 28.sp,
+            text = "My Timetable 📅",
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = MaterialTheme.colorScheme.onBackground
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(5.dp))
 
         Text(
-            text = "Manage your weekly class schedule",
-            fontSize = 15.sp,
-            color = Color.Gray
+            text = "Manage your weekly class schedule.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+
+            TimetableStatCard(
+                title = "Total Classes",
+                count = timetableEntries.size,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+
+            TimetableStatCard(
+                title = "Active Days",
+                count = activeDays,
+                color = Color(0xFF26A69A),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
 
         Button(
             onClick = {
                 showAddTimetable = true
                 errorMessage = ""
             },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF3F51B5)
-            )
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Text("+ Add Class", fontSize = 16.sp)
+            Text(
+                text = "+ Add New Class",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        if (isLoading) {
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Loading timetable...", color = Color.Gray)
-            }
-
-        } else if (errorMessage.isNotEmpty()) {
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("⚠️", fontSize = 45.sp)
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(errorMessage, color = Color.Red)
-            }
-
-        } else if (timetableEntries.isEmpty()) {
-
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("📅", fontSize = 50.sp)
-
-                Spacer(modifier = Modifier.height(10.dp))
-
                 Text(
-                    text = "No classes added yet",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF172554)
+                    text = "🔔",
+                    fontSize = 20.sp
                 )
 
+                Spacer(modifier = Modifier.width(10.dp))
+
                 Text(
-                    text = "Add your first class to build your timetable.",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                    text = "Class reminders are scheduled 10 minutes before each class.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
+        }
 
-        } else {
+        if (errorMessage.isNotEmpty()) {
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
             ) {
-                items(
-                    items = timetableEntries,
-                    key = { it.id }
-                ) { entry ->
+                Text(
+                    text = errorMessage,
+                    modifier = Modifier.padding(14.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
 
-                    TimetableCard(
-                        entry = entry,
-                        onDelete = {
+        Spacer(modifier = Modifier.height(14.dp))
 
-                            val user = auth.currentUser
+        when {
 
-                            if (user != null) {
+            isLoading -> {
 
-                                firestore.collection("users")
-                                    .document(user.uid)
-                                    .collection("timetable")
-                                    .document(entry.id)
-                                    .delete()
-                                    .addOnSuccessListener {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator()
 
-                                        ClassReminderScheduler.cancel(
-                                            context.applicationContext,
-                                            entry.id
-                                        )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                                        timetableEntries.remove(entry)
-                                    }
-                                    .addOnFailureListener { exception ->
-                                        errorMessage = exception.message
-                                            ?: "Failed to delete class."
-                                    }
-                            }
-                        }
+                    Text(
+                        text = "Loading your timetable...",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            }
+
+            timetableEntries.isEmpty() -> {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "📅",
+                        fontSize = 54.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "No classes added yet",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Add your first class to build your timetable.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            else -> {
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+
+                    val sortedEntries = timetableEntries.sortedWith(
+                        compareBy<TimetableEntry> {
+                            days.indexOf(it.day).let { index ->
+                                if (index == -1) Int.MAX_VALUE else index
+                            }
+                        }.thenBy { it.startTime }
+                    )
+
+                    items(
+                        items = sortedEntries,
+                        key = { it.id }
+                    ) { entry ->
+
+                        TimetableCard(
+                            entry = entry,
+                            onDelete = {
+
+                                val user = auth.currentUser
+
+                                if (user != null) {
+
+                                    firestore.collection("users")
+                                        .document(user.uid)
+                                        .collection("timetable")
+                                        .document(entry.id)
+                                        .delete()
+                                        .addOnSuccessListener {
+
+                                            ClassReminderScheduler.cancel(
+                                                context.applicationContext,
+                                                entry.id
+                                            )
+
+                                            timetableEntries.remove(entry)
+                                            errorMessage = ""
+                                        }
+                                        .addOnFailureListener { exception ->
+
+                                            errorMessage = exception.message
+                                                ?: "Failed to delete class."
+                                        }
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -281,6 +361,7 @@ fun TimetableScreen() {
             onDismiss = {
                 showAddTimetable = false
             },
+
             onAddTimetable = { entry ->
 
                 val user = auth.currentUser
@@ -325,12 +406,51 @@ fun TimetableScreen() {
                             errorMessage = ""
                         }
                         .addOnFailureListener { exception ->
+
                             errorMessage = exception.message
                                 ?: "Failed to add class."
                         }
                 }
             }
         )
+    }
+}
+
+@Composable
+fun TimetableStatCard(
+    title: String,
+    count: Int,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = count.toString(),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        }
     }
 }
 
@@ -342,40 +462,82 @@ fun TimetableCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
         )
     ) {
 
         Column(
-            modifier = Modifier.padding(18.dp)
+            modifier = Modifier.padding(16.dp)
         ) {
 
-            Text(
-                text = entry.subject,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = entry.subject,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "📅 ${entry.day}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = entry.day.take(3).uppercase(),
+                        modifier = Modifier.padding(
+                            horizontal = 12.dp,
+                            vertical = 8.dp
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = "📅 ${entry.day}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = "⏰ ${entry.startTime} - ${entry.endTime}",
-                fontSize = 14.sp,
-                color = Color.Gray
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
             Text(
-                text = "🏫 ${entry.classroom}",
-                fontSize = 14.sp,
-                color = Color.Gray
+                text = "🏫 Classroom: ${entry.classroom}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -384,8 +546,13 @@ fun TimetableCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                TextButton(onClick = onDelete) {
-                    Text("Delete", color = Color.Red)
+                TextButton(
+                    onClick = onDelete,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete Class")
                 }
             }
         }
@@ -419,12 +586,13 @@ fun AddTimetableDialog(
 
         title = {
             Text(
-                "Add Class",
+                text = "Add New Class 📚",
                 fontWeight = FontWeight.Bold
             )
         },
 
         text = {
+
             Column {
 
                 OutlinedTextField(
@@ -432,57 +600,49 @@ fun AddTimetableDialog(
                     onValueChange = { subject = it },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Subject") },
-                    singleLine = true
+                    placeholder = { Text("Enter subject name") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                Column {
+                Box {
 
                     OutlinedTextField(
                         value = day,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Day") },
+                        placeholder = { Text("Select class day") },
                         readOnly = true,
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
                     )
+
+                    TextButton(
+                        onClick = { expanded = true },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 4.dp)
+                    ) {
+                        Text("Select")
+                    }
 
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = {
-                            expanded = false
-                        }
+                        onDismissRequest = { expanded = false }
                     ) {
                         days.forEach { selectedDay ->
 
                             DropdownMenuItem(
-                                text = {
-                                    Text(selectedDay)
-                                },
+                                text = { Text(selectedDay) },
                                 onClick = {
                                     day = selectedDay
                                     expanded = false
                                 }
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(5.dp))
-
-                    Button(
-                        onClick = {
-                            expanded = true
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            if (day.isEmpty()) {
-                                "Select Day"
-                            } else {
-                                day
-                            }
-                        )
                     }
                 }
 
@@ -494,7 +654,8 @@ fun AddTimetableDialog(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Start Time") },
                     placeholder = { Text("Example: 09:00 AM") },
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -505,7 +666,8 @@ fun AddTimetableDialog(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("End Time") },
                     placeholder = { Text("Example: 10:00 AM") },
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -516,12 +678,14 @@ fun AddTimetableDialog(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Classroom") },
                     placeholder = { Text("Example: C-204") },
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
             }
         },
 
         confirmButton = {
+
             Button(
                 onClick = {
 
@@ -535,17 +699,22 @@ fun AddTimetableDialog(
 
                         onAddTimetable(
                             TimetableEntry(
-                                subject = subject,
+                                subject = subject.trim(),
                                 day = day,
-                                startTime = startTime,
-                                endTime = endTime,
-                                classroom = classroom
+                                startTime = startTime.trim(),
+                                endTime = endTime.trim(),
+                                classroom = classroom.trim()
                             )
                         )
                     }
-                }
+                },
+                enabled = subject.isNotBlank() &&
+                        day.isNotBlank() &&
+                        startTime.isNotBlank() &&
+                        endTime.isNotBlank() &&
+                        classroom.isNotBlank()
             ) {
-                Text("Add")
+                Text("Add Class")
             }
         },
 

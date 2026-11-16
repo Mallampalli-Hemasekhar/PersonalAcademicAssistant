@@ -1,3 +1,4 @@
+
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
@@ -9,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +36,7 @@ fun StudyPlannerScreen() {
     var endTime by remember { mutableStateOf("") }
 
     var isLoading by remember { mutableStateOf(true) }
+    var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
 
@@ -45,13 +46,14 @@ fun StudyPlannerScreen() {
 
     val currentUser = FirebaseAuth.getInstance().currentUser
     val firestore = FirebaseFirestore.getInstance()
+    val colors = MaterialTheme.colorScheme
 
-    // Load study plans from Firestore
     DisposableEffect(currentUser?.uid) {
 
         if (currentUser == null) {
             errorMessage = "Please login to use the Study Planner."
             isLoading = false
+
             onDispose { }
         } else {
 
@@ -62,7 +64,8 @@ fun StudyPlannerScreen() {
                 .addSnapshotListener { snapshot, error ->
 
                     if (error != null) {
-                        errorMessage = error.message ?: "Failed to load study plans."
+                        errorMessage = error.message
+                            ?: "Failed to load study plans."
                         isLoading = false
                         return@addSnapshotListener
                     }
@@ -73,17 +76,17 @@ fun StudyPlannerScreen() {
 
                         for (document in snapshot.documents) {
 
-                            val plan = StudyPlan(
-                                id = document.id,
-                                subject = document.getString("subject") ?: "",
-                                topic = document.getString("topic") ?: "",
-                                studyDate = document.getString("studyDate") ?: "",
-                                startTime = document.getString("startTime") ?: "",
-                                endTime = document.getString("endTime") ?: "",
-                                completed = document.getBoolean("completed") ?: false
+                            studyPlans.add(
+                                StudyPlan(
+                                    id = document.id,
+                                    subject = document.getString("subject") ?: "",
+                                    topic = document.getString("topic") ?: "",
+                                    studyDate = document.getString("studyDate") ?: "",
+                                    startTime = document.getString("startTime") ?: "",
+                                    endTime = document.getString("endTime") ?: "",
+                                    completed = document.getBoolean("completed") ?: false
+                                )
                             )
-
-                            studyPlans.add(plan)
                         }
                     }
 
@@ -99,365 +102,666 @@ fun StudyPlannerScreen() {
     val completedCount = studyPlans.count { it.completed }
     val pendingCount = studyPlans.count { !it.completed }
 
+    val progress = if (studyPlans.isNotEmpty()) {
+        completedCount.toFloat() / studyPlans.size.toFloat()
+    } else {
+        0f
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
 
         Text(
             text = "📚 Smart Study Planner",
-            fontSize = 24.sp,
+            fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = colors.onBackground
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Organize your study sessions and achieve your goals.",
-            color = Color.Gray,
-            fontSize = 14.sp
+            text = "Plan your study sessions and stay consistent with your learning goals.",
+            fontSize = 14.sp,
+            color = colors.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(22.dp))
 
-        // Summary cards
+        // Study plan statistics
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
 
-            Card(
+            StudyPlannerStatCard(
+                title = "Total Plans",
+                value = studyPlans.size.toString(),
                 modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE3F2FD)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Total Plans")
-                    Text(
-                        studyPlans.size.toString(),
-                        fontSize = 25.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                icon = "📚"
+            )
 
-            Card(
+            StudyPlannerStatCard(
+                title = "Completed",
+                value = completedCount.toString(),
                 modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFE8F5E9)
-                )
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Completed")
-                    Text(
-                        completedCount.toString(),
-                        fontSize = 25.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+                icon = "✅"
+            )
 
-            Card(
+            StudyPlannerStatCard(
+                title = "Pending",
+                value = pendingCount.toString(),
                 modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFF3E0)
-                )
+                icon = "⏳"
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Overall progress
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colors.primaryContainer
+            )
+        ) {
+
+            Column(
+                modifier = Modifier.padding(18.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Pending")
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
                     Text(
-                        pendingCount.toString(),
-                        fontSize = 25.sp,
-                        fontWeight = FontWeight.Bold
+                        text = "Study Progress",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
                     )
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(9.dp),
+                    color = colors.primary,
+                    trackColor = colors.surface
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = if (studyPlans.isEmpty()) {
+                        "Add your first study plan to track your progress."
+                    } else {
+                        "$completedCount out of ${studyPlans.size} study sessions completed."
+                    },
+                    fontSize = 13.sp,
+                    color = colors.onPrimaryContainer
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Add study plan
+        // Create study plan
+
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = colors.surface
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
             )
         ) {
 
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(18.dp)
             ) {
 
                 Text(
-                    text = "Create Study Plan",
+                    text = "➕ Create Study Plan",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF172554)
+                    color = colors.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Add a subject, topic, date and study time.",
+                    fontSize = 13.sp,
+                    color = colors.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
 
                 OutlinedTextField(
                     value = subject,
-                    onValueChange = { subject = it },
+                    onValueChange = {
+                        subject = it
+                        errorMessage = ""
+                    },
                     label = { Text("Subject Name") },
+                    placeholder = { Text("e.g. Data Structures") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = topic,
-                    onValueChange = { topic = it },
+                    onValueChange = {
+                        topic = it
+                        errorMessage = ""
+                    },
                     label = { Text("Topic to Study") },
+                    placeholder = { Text("e.g. Linked Lists") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = studyDate,
-                    onValueChange = { studyDate = it },
+                    onValueChange = {
+                        studyDate = it
+                        errorMessage = ""
+                    },
                     label = { Text("Study Date (DD-MM-YYYY)") },
+                    placeholder = { Text("17-11-2026") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = startTime,
-                    onValueChange = { startTime = it },
-                    label = { Text("Start Time (e.g. 09:00 AM)") },
+                    onValueChange = {
+                        startTime = it
+                        errorMessage = ""
+                    },
+                    label = { Text("Start Time") },
+                    placeholder = { Text("09:00 AM") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = endTime,
-                    onValueChange = { endTime = it },
-                    label = { Text("End Time (e.g. 10:00 AM)") },
+                    onValueChange = {
+                        endTime = it
+                        errorMessage = ""
+                    },
+                    label = { Text("End Time") },
+                    placeholder = { Text("10:00 AM") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Button(
                     onClick = {
 
-                        if (
+                        when {
                             subject.isBlank() ||
-                            topic.isBlank() ||
-                            studyDate.isBlank() ||
-                            startTime.isBlank() ||
-                            endTime.isBlank()
-                        ) {
-                            errorMessage = "Please fill in all fields."
-                            successMessage = ""
-                        } else if (currentUser == null) {
-                            errorMessage = "Please login first."
-                            successMessage = ""
-                        } else {
+                                    topic.isBlank() ||
+                                    studyDate.isBlank() ||
+                                    startTime.isBlank() ||
+                                    endTime.isBlank() -> {
 
-                            errorMessage = ""
-                            successMessage = ""
+                                errorMessage = "Please fill in all fields."
+                                successMessage = ""
+                            }
 
-                            val plan = hashMapOf(
-                                "subject" to subject.trim(),
-                                "topic" to topic.trim(),
-                                "studyDate" to studyDate.trim(),
-                                "startTime" to startTime.trim(),
-                                "endTime" to endTime.trim(),
-                                "completed" to false
-                            )
+                            currentUser == null -> {
+                                errorMessage = "Please login first."
+                                successMessage = ""
+                            }
 
-                            firestore
-                                .collection("users")
-                                .document(currentUser.uid)
-                                .collection("studyPlans")
-                                .add(plan)
-                                .addOnSuccessListener {
+                            isSaving -> Unit
 
-                                    subject = ""
-                                    topic = ""
-                                    studyDate = ""
-                                    startTime = ""
-                                    endTime = ""
+                            else -> {
 
-                                    successMessage = "Study plan added successfully!"
-                                }
-                                .addOnFailureListener { exception ->
-                                    errorMessage = exception.message
-                                        ?: "Failed to save study plan."
-                                }
+                                errorMessage = ""
+                                successMessage = ""
+                                isSaving = true
+
+                                val plan = hashMapOf(
+                                    "subject" to subject.trim(),
+                                    "topic" to topic.trim(),
+                                    "studyDate" to studyDate.trim(),
+                                    "startTime" to startTime.trim(),
+                                    "endTime" to endTime.trim(),
+                                    "completed" to false
+                                )
+
+                                firestore
+                                    .collection("users")
+                                    .document(currentUser.uid)
+                                    .collection("studyPlans")
+                                    .add(plan)
+                                    .addOnSuccessListener {
+
+                                        subject = ""
+                                        topic = ""
+                                        studyDate = ""
+                                        startTime = ""
+                                        endTime = ""
+
+                                        successMessage =
+                                            "Study plan added successfully!"
+                                        isSaving = false
+                                    }
+                                    .addOnFailureListener { exception ->
+
+                                        errorMessage = exception.message
+                                            ?: "Failed to save study plan."
+
+                                        isSaving = false
+                                    }
+                            }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3F51B5)
-                    )
+                    enabled = !isSaving
                 ) {
-                    Text(
-                        "Add Study Plan",
-                        fontWeight = FontWeight.Bold
-                    )
+
+                    if (isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(21.dp),
+                            color = colors.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Add Study Plan",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                    }
                 }
 
                 if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Text(
-                        errorMessage,
-                        color = Color.Red,
+                        text = errorMessage,
+                        color = colors.error,
                         fontSize = 13.sp
                     )
                 }
 
                 if (successMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Text(
-                        successMessage,
-                        color = Color(0xFF2E7D32),
+                        text = successMessage,
+                        color = colors.primary,
                         fontSize = 13.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(26.dp))
+
+        // Study sessions heading
 
         Text(
             text = "My Study Sessions",
-            fontSize = 20.sp,
+            fontSize = 21.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = colors.onBackground
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(5.dp))
+
+        Text(
+            text = "Manage your planned learning sessions.",
+            fontSize = 13.sp,
+            color = colors.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
 
         if (isLoading) {
 
-            CircularProgressIndicator()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(30.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
 
         } else if (studyPlans.isEmpty()) {
 
-            Text(
-                text = "No study plans added yet.",
-                color = Color.Gray
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colors.surface
+                )
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = "📖",
+                        fontSize = 38.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "No Study Plans Yet",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "Create your first study session above.",
+                        fontSize = 13.sp,
+                        color = colors.onSurfaceVariant
+                    )
+                }
+            }
 
         } else {
 
-            studyPlans.forEach { plan ->
+            val sortedPlans = studyPlans.sortedWith(
+                compareBy<StudyPlan> { it.completed }
+                    .thenBy { it.studyDate }
+                    .thenBy { it.startTime }
+            )
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
-                ) {
+            sortedPlans.forEach { plan ->
 
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
+                StudyPlanCard(
+                    plan = plan,
+                    onCompletionChange = { checked ->
 
-                        Text(
-                            text = plan.subject,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3F51B5)
-                        )
+                        if (currentUser != null) {
 
-                        Spacer(modifier = Modifier.height(5.dp))
+                            firestore
+                                .collection("users")
+                                .document(currentUser.uid)
+                                .collection("studyPlans")
+                                .document(plan.id)
+                                .update("completed", checked)
+                                .addOnFailureListener { exception ->
 
-                        Text("Topic: ${plan.topic}")
-
-                        Text("Date: ${plan.studyDate}")
-
-                        Text(
-                            "Time: ${plan.startTime} - ${plan.endTime}"
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            Checkbox(
-                                checked = plan.completed,
-                                onCheckedChange = { checked ->
-
-                                    if (currentUser != null) {
-
-                                        firestore
-                                            .collection("users")
-                                            .document(currentUser.uid)
-                                            .collection("studyPlans")
-                                            .document(plan.id)
-                                            .update("completed", checked)
-                                            .addOnFailureListener { exception ->
-                                                errorMessage = exception.message
-                                                    ?: "Failed to update study plan."
-                                            }
-                                    }
+                                    errorMessage = exception.message
+                                        ?: "Failed to update study plan."
                                 }
-                            )
-
-                            Text(
-                                text = if (plan.completed) {
-                                    "Completed"
-                                } else {
-                                    "Mark as Completed"
-                                },
-                                color = if (plan.completed) {
-                                    Color(0xFF2E7D32)
-                                } else {
-                                    Color.DarkGray
-                                }
-                            )
                         }
+                    },
+                    onDelete = {
 
-                        Button(
-                            onClick = {
+                        if (currentUser != null) {
 
-                                if (currentUser != null) {
+                            firestore
+                                .collection("users")
+                                .document(currentUser.uid)
+                                .collection("studyPlans")
+                                .document(plan.id)
+                                .delete()
+                                .addOnFailureListener { exception ->
 
-                                    firestore
-                                        .collection("users")
-                                        .document(currentUser.uid)
-                                        .collection("studyPlans")
-                                        .document(plan.id)
-                                        .delete()
-                                        .addOnFailureListener { exception ->
-                                            errorMessage = exception.message
-                                                ?: "Failed to delete study plan."
-                                        }
+                                    errorMessage = exception.message
+                                        ?: "Failed to delete study plan."
                                 }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFD32F2F)
-                            ),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Delete")
                         }
                     }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun StudyPlannerStatCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    icon: String
+) {
+
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(15.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Text(
+                text = icon,
+                fontSize = 21.sp
+            )
+
+            Spacer(modifier = Modifier.height(7.dp))
+
+            Text(
+                text = value,
+                fontSize = 23.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.primary
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun StudyPlanCard(
+    plan: StudyPlan,
+    onCompletionChange: (Boolean) -> Unit,
+    onDelete: () -> Unit
+) {
+
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(17.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = plan.subject,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = plan.topic,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.onSurface
+                    )
                 }
+
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (plan.completed) {
+                        colors.primaryContainer
+                    } else {
+                        colors.tertiaryContainer
+                    }
+                ) {
+
+                    Text(
+                        text = if (plan.completed) "Completed" else "Pending",
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 6.dp
+                        ),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (plan.completed) {
+                            colors.onPrimaryContainer
+                        } else {
+                            colors.onTertiaryContainer
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            HorizontalDivider(
+                color = colors.outlineVariant
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "📅  ${plan.studyDate}",
+                fontSize = 13.sp,
+                color = colors.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(7.dp))
+
+            Text(
+                text = "🕒  ${plan.startTime} - ${plan.endTime}",
+                fontSize = 13.sp,
+                color = colors.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Checkbox(
+                    checked = plan.completed,
+                    onCheckedChange = onCompletionChange
+                )
+
+                Text(
+                    text = if (plan.completed) {
+                        "Study session completed"
+                    } else {
+                        "Mark as completed"
+                    },
+                    fontSize = 13.sp,
+                    color = colors.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            OutlinedButton(
+                onClick = onDelete,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = colors.error
+                )
+            ) {
+
+                Text(
+                    text = "Delete Study Plan",
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }

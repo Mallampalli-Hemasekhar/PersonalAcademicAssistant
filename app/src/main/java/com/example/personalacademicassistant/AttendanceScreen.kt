@@ -2,31 +2,12 @@
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -59,18 +40,15 @@ fun AttendanceScreen() {
         mutableStateOf<List<AttendanceRecord>>(emptyList())
     }
 
-    // Real-time Firestore attendance listener
+    val colors = MaterialTheme.colorScheme
+
     DisposableEffect(userId) {
-
         if (userId == null) {
-
             errorMessage = "Please log in to view attendance."
             isLoading = false
 
             onDispose { }
-
         } else {
-
             isLoading = true
             errorMessage = ""
 
@@ -87,14 +65,12 @@ fun AttendanceScreen() {
                     }
 
                     attendanceRecords = result?.documents?.map { document ->
-
                         AttendanceRecord(
                             id = document.id,
                             subject = document.getString("subject") ?: "",
                             totalClasses = document.getLong("totalClasses")?.toInt() ?: 0,
                             attendedClasses = document.getLong("attendedClasses")?.toInt() ?: 0
                         )
-
                     } ?: emptyList()
 
                     isLoading = false
@@ -106,10 +82,21 @@ fun AttendanceScreen() {
         }
     }
 
+    val totalClasses = attendanceRecords.sumOf { it.totalClasses }
+    val attendedClasses = attendanceRecords.sumOf { it.attendedClasses }
+
+    val overallPercentage = if (totalClasses > 0) {
+        attendedClasses.toDouble() / totalClasses * 100
+    } else {
+        0.0
+    }
+
+    val roundedOverall = round(overallPercentage * 100) / 100
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(colors.background)
             .padding(20.dp)
     ) {
 
@@ -117,71 +104,154 @@ fun AttendanceScreen() {
             text = "📊 Attendance",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = colors.onBackground
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Your attendance overview",
-            fontSize = 15.sp,
-            color = Color.Gray
+            text = "Track your subject-wise attendance",
+            fontSize = 14.sp,
+            color = colors.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colors.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+
+                Text(
+                    text = "Overall Attendance",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colors.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "$roundedOverall%",
+                    fontSize = 34.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(9.dp)
+                        .background(
+                            colors.surface.copy(alpha = 0.5f),
+                            RoundedCornerShape(20.dp)
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(
+                                (overallPercentage / 100.0)
+                                    .toFloat()
+                                    .coerceIn(0f, 1f)
+                            )
+                            .fillMaxHeight()
+                            .background(
+                                colors.primary,
+                                RoundedCornerShape(20.dp)
+                            )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = if (totalClasses == 0) {
+                        "Add attendance to see your progress."
+                    } else if (overallPercentage < 75) {
+                        "⚠️ Your overall attendance is below 75%."
+                    } else {
+                        "✅ Your overall attendance is satisfactory."
+                    },
+                    fontSize = 13.sp,
+                    color = colors.onPrimaryContainer
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+
+            AttendanceSummaryCard(
+                title = "Total Classes",
+                value = totalClasses.toString(),
+                modifier = Modifier.weight(1f)
+            )
+
+            AttendanceSummaryCard(
+                title = "Attended",
+                value = attendedClasses.toString(),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
         Button(
             onClick = {
-                showAddAttendance = true
                 errorMessage = ""
+                showAddAttendance = true
             },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF3F51B5)
-            )
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(14.dp)
         ) {
             Text(
                 text = "+ Add Attendance",
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Text(
+            text = "Subject-wise Attendance",
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         if (isLoading) {
 
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                CircularProgressIndicator(
-                    color = Color(0xFF3F51B5)
-                )
+                CircularProgressIndicator()
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text("Loading attendance...")
-            }
-
-        } else if (errorMessage.isNotBlank() && attendanceRecords.isEmpty()) {
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("⚠️", fontSize = 40.sp)
-
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = errorMessage,
-                    color = Color.Red
+                    text = "Loading attendance...",
+                    color = colors.onSurfaceVariant
                 )
             }
 
@@ -189,27 +259,40 @@ fun AttendanceScreen() {
 
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text("📊", fontSize = 50.sp)
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "📊",
+                    fontSize = 48.sp
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                     text = "No attendance records yet",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF172554)
+                    color = colors.onBackground
                 )
 
                 Text(
-                    text = "Add attendance for your first subject.",
+                    text = "Add your first subject's attendance.",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = colors.onSurfaceVariant
                 )
+
+                if (errorMessage.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage,
+                        color = colors.error,
+                        fontSize = 13.sp
+                    )
+                }
             }
 
         } else {
@@ -266,31 +349,29 @@ fun AttendanceScreen() {
                         }
                     )
                 }
-            }
-        }
 
-        if (errorMessage.isNotBlank() && attendanceRecords.isNotEmpty()) {
-            Text(
-                text = errorMessage,
-                color = Color.Red,
-                fontSize = 13.sp
-            )
+                if (errorMessage.isNotBlank()) {
+                    item {
+                        Text(
+                            text = errorMessage,
+                            color = colors.error,
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
         }
     }
 
     if (showAddAttendance) {
-
         AddAttendanceDialog(
             onDismiss = {
                 showAddAttendance = false
             },
-
             onAddAttendance = { record ->
 
                 if (userId == null) {
-
                     errorMessage = "Please log in first."
-
                 } else {
 
                     val attendanceData = hashMapOf(
@@ -314,6 +395,44 @@ fun AttendanceScreen() {
                 }
             }
         )
+    }
+}
+
+@Composable
+fun AttendanceSummaryCard(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+
+    val colors = MaterialTheme.colorScheme
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                color = colors.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = value,
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.onSurface
+            )
+        }
     }
 }
 
@@ -356,6 +475,8 @@ fun AttendanceCard(
     onDelete: () -> Unit
 ) {
 
+    val colors = MaterialTheme.colorScheme
+
     val percentage = if (record.totalClasses > 0) {
         record.attendedClasses.toDouble() / record.totalClasses * 100
     } else {
@@ -365,16 +486,16 @@ fun AttendanceCard(
     val roundedPercentage = round(percentage * 100) / 100
 
     val statusColor = if (percentage < 75) {
-        Color(0xFFD32F2F)
+        colors.error
     } else {
-        Color(0xFF2E7D32)
+        Color(0xFF219653)
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colors.surface
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp
@@ -387,50 +508,10 @@ fun AttendanceCard(
 
             Text(
                 text = record.subject,
-                fontSize = 20.sp,
+                fontSize = 19.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
+                color = colors.onSurface
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Classes Held: ${record.totalClasses}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Text(
-                text = "Classes Attended: ${record.attendedClasses}",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Attendance: $roundedPercentage%",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = statusColor
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            if (percentage < 75) {
-                Text(
-                    text = "⚠️ Attendance is below 75%",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFD32F2F)
-                )
-            } else {
-                Text(
-                    text = "✅ Attendance is satisfactory",
-                    fontSize = 14.sp,
-                    color = Color(0xFF2E7D32)
-                )
-            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -439,16 +520,122 @@ fun AttendanceCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
 
+                Text(
+                    text = "Classes Held",
+                    fontSize = 13.sp,
+                    color = colors.onSurfaceVariant
+                )
+
+                Text(
+                    text = record.totalClasses.toString(),
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Text(
+                    text = "Classes Attended",
+                    fontSize = 13.sp,
+                    color = colors.onSurfaceVariant
+                )
+
+                Text(
+                    text = record.attendedClasses.toString(),
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = "Attendance",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = colors.onSurface
+                )
+
+                Text(
+                    text = "$roundedPercentage%",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = statusColor
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(9.dp)
+                    .background(
+                        colors.surfaceVariant,
+                        RoundedCornerShape(20.dp)
+                    )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(
+                            (percentage / 100.0)
+                                .toFloat()
+                                .coerceIn(0f, 1f)
+                        )
+                        .fillMaxHeight()
+                        .background(
+                            statusColor,
+                            RoundedCornerShape(20.dp)
+                        )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = if (percentage < 75) {
+                    "⚠️ Attendance is below 75%"
+                } else {
+                    "✅ Attendance is satisfactory"
+                },
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = statusColor
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+
                 Button(
-                    onClick = onPresent
+                    onClick = onPresent,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Present")
                 }
 
                 Button(
                     onClick = onAbsent,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFD32F2F)
+                        containerColor = colors.error
                     )
                 ) {
                     Text("Absent")
@@ -464,7 +651,7 @@ fun AttendanceCard(
                 ) {
                     Text(
                         text = "Delete",
-                        color = Color.Red
+                        color = colors.error
                     )
                 }
             }
@@ -541,7 +728,7 @@ fun AddAttendanceDialog(
 
                     Text(
                         text = validationError,
-                        color = Color.Red,
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp
                     )
                 }
@@ -556,17 +743,22 @@ fun AddAttendanceDialog(
                     val attended = attendedClasses.toIntOrNull()
 
                     when {
-                        subject.isBlank() ->
+                        subject.isBlank() -> {
                             validationError = "Enter a subject name."
+                        }
 
-                        total == null || attended == null ->
+                        total == null || attended == null -> {
                             validationError = "Enter valid class numbers."
+                        }
 
-                        total <= 0 ->
+                        total <= 0 -> {
                             validationError = "Total classes must be greater than zero."
+                        }
 
-                        attended < 0 || attended > total ->
-                            validationError = "Attended classes must be between 0 and total classes."
+                        attended < 0 || attended > total -> {
+                            validationError =
+                                "Attended classes must be between 0 and total classes."
+                        }
 
                         else -> {
                             onAddAttendance(

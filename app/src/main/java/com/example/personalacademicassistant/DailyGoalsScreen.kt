@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +36,7 @@ fun DailyGoalsScreen() {
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
+    var isSaving by remember { mutableStateOf(false) }
 
     val goals = remember {
         mutableStateListOf<DailyGoal>()
@@ -44,13 +44,19 @@ fun DailyGoalsScreen() {
 
     val currentUser = FirebaseAuth.getInstance().currentUser
     val firestore = FirebaseFirestore.getInstance()
+    val colors = MaterialTheme.colorScheme
+
+    // Load goals from Firestore
 
     DisposableEffect(currentUser?.uid) {
 
         if (currentUser == null) {
+
             errorMessage = "Please login first."
             isLoading = false
+
             onDispose { }
+
         } else {
 
             val listener = firestore
@@ -72,16 +78,16 @@ fun DailyGoalsScreen() {
 
                         for (document in snapshot.documents) {
 
-                            val goal = DailyGoal(
-                                id = document.id,
-                                title = document.getString("title") ?: "",
-                                targetHours = document.getDouble("targetHours") ?: 0.0,
-                                completedHours = document.getDouble("completedHours") ?: 0.0,
-                                date = document.getString("date") ?: "",
-                                completed = document.getBoolean("completed") ?: false
+                            goals.add(
+                                DailyGoal(
+                                    id = document.id,
+                                    title = document.getString("title") ?: "",
+                                    targetHours = document.getDouble("targetHours") ?: 0.0,
+                                    completedHours = document.getDouble("completedHours") ?: 0.0,
+                                    date = document.getString("date") ?: "",
+                                    completed = document.getBoolean("completed") ?: false
+                                )
                             )
-
-                            goals.add(goal)
                         }
                     }
 
@@ -94,6 +100,8 @@ fun DailyGoalsScreen() {
         }
     }
 
+    // Statistics
+
     val totalGoals = goals.size
     val completedGoals = goals.count { it.completed }
     val pendingGoals = totalGoals - completedGoals
@@ -102,9 +110,9 @@ fun DailyGoalsScreen() {
     val totalCompletedHours = goals.sumOf { it.completedHours }
 
     val progress = if (totalTargetHours > 0) {
-        (totalCompletedHours / totalTargetHours * 100)
+        (totalCompletedHours / totalTargetHours)
             .toFloat()
-            .coerceIn(0f, 100f)
+            .coerceIn(0f, 1f)
     } else {
         0f
     }
@@ -112,54 +120,56 @@ fun DailyGoalsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
+
+        // Header
 
         Text(
             text = "🎯 Daily Goals",
             fontSize = 25.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = colors.onBackground
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
             text = "Set your daily study targets and track your progress.",
-            color = Color.Gray,
-            fontSize = 14.sp
+            fontSize = 14.sp,
+            color = colors.onSurfaceVariant
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(22.dp))
 
         // Summary cards
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
 
             GoalSummaryCard(
                 title = "Total",
                 value = totalGoals.toString(),
                 modifier = Modifier.weight(1f),
-                color = Color(0xFFE3F2FD)
+                color = colors.surface
             )
 
             GoalSummaryCard(
                 title = "Completed",
                 value = completedGoals.toString(),
                 modifier = Modifier.weight(1f),
-                color = Color(0xFFE8F5E9)
+                color = colors.surface
             )
 
             GoalSummaryCard(
                 title = "Pending",
                 value = pendingGoals.toString(),
                 modifier = Modifier.weight(1f),
-                color = Color(0xFFFFF3E0)
+                color = colors.surface
             )
         }
 
@@ -170,115 +180,154 @@ fun DailyGoalsScreen() {
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = colors.primaryContainer
             ),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(18.dp)
         ) {
 
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(18.dp)
             ) {
 
-                Text(
-                    text = "Overall Study Progress",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Overall Study Progress",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 LinearProgressIndicator(
-                    progress = { progress / 100f },
+                    progress = { progress },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(10.dp),
-                    color = Color(0xFF3F51B5),
-                    trackColor = Color.LightGray
+                        .height(9.dp),
+                    color = colors.primary,
+                    trackColor = colors.surface
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = "${"%.1f".format(progress)}% completed",
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF3F51B5)
-                )
-
-                Text(
-                    text = "$totalCompletedHours hours completed out of $totalTargetHours target hours",
+                    text = "${"%.1f".format(totalCompletedHours)} hours completed out of ${"%.1f".format(totalTargetHours)} target hours",
                     fontSize = 12.sp,
-                    color = Color.Gray
+                    color = colors.onPrimaryContainer
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Create goal form
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = colors.surface
             ),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(18.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
+            )
         ) {
 
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(18.dp)
             ) {
 
                 Text(
-                    text = "Create Daily Goal",
+                    text = "➕ Create Daily Goal",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF172554)
+                    color = colors.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Define what you want to achieve today.",
+                    fontSize = 13.sp,
+                    color = colors.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        errorMessage = ""
+                    },
+                    label = { Text("Goal Title") },
+                    placeholder = {
+                        Text("Example: Study Data Structures")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Goal Title") },
-                    placeholder = { Text("Example: Study Data Structures") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                OutlinedTextField(
                     value = date,
-                    onValueChange = { date = it },
+                    onValueChange = {
+                        date = it
+                        errorMessage = ""
+                    },
                     label = { Text("Date (DD-MM-YYYY)") },
+                    placeholder = { Text("17-11-2026") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = targetHours,
-                    onValueChange = { targetHours = it },
+                    onValueChange = {
+                        targetHours = it
+                        errorMessage = ""
+                    },
                     label = { Text("Target Study Hours") },
                     placeholder = { Text("Example: 3") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = completedHours,
-                    onValueChange = { completedHours = it },
+                    onValueChange = {
+                        completedHours = it
+                        errorMessage = ""
+                    },
                     label = { Text("Already Completed Hours") },
                     placeholder = { Text("Example: 1") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Button(
                     onClick = {
@@ -292,28 +341,45 @@ fun DailyGoalsScreen() {
                                     date.isBlank() ||
                                     targetHours.isBlank() ||
                                     completedHours.isBlank() -> {
+
                                 errorMessage = "Please fill in all fields."
+                                successMessage = ""
+                            }
+
+                            !date.matches(
+                                Regex("\\d{2}-\\d{2}-\\d{4}")
+                            ) -> {
+
+                                errorMessage = "Enter date in DD-MM-YYYY format."
                                 successMessage = ""
                             }
 
                             target == null ||
                                     completed == null ||
+                                    !target.isFinite() ||
+                                    !completed.isFinite() ||
                                     target <= 0 ||
                                     completed < 0 ||
                                     completed > target -> {
-                                errorMessage = "Enter valid hours. Completed hours cannot exceed target hours."
+
+                                errorMessage =
+                                    "Enter valid hours. Completed hours cannot exceed target hours."
                                 successMessage = ""
                             }
 
                             currentUser == null -> {
+
                                 errorMessage = "Please login first."
                                 successMessage = ""
                             }
+
+                            isSaving -> Unit
 
                             else -> {
 
                                 errorMessage = ""
                                 successMessage = ""
+                                isSaving = true
 
                                 val goal = hashMapOf(
                                     "title" to title.trim(),
@@ -337,206 +403,200 @@ fun DailyGoalsScreen() {
 
                                         successMessage =
                                             "Daily goal added successfully!"
+
+                                        isSaving = false
                                     }
                                     .addOnFailureListener { exception ->
+
                                         errorMessage = exception.message
                                             ?: "Failed to save daily goal."
+
+                                        isSaving = false
                                     }
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF3F51B5)
-                    )
+                    enabled = !isSaving
                 ) {
-                    Text(
-                        text = "Add Daily Goal",
-                        fontWeight = FontWeight.Bold
-                    )
+
+                    if (isSaving) {
+
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(21.dp),
+                            color = colors.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+
+                    } else {
+
+                        Text(
+                            text = "Add Daily Goal",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
+                        )
+                    }
                 }
 
                 if (errorMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Text(
                         text = errorMessage,
-                        color = Color.Red,
+                        color = colors.error,
                         fontSize = 13.sp
                     )
                 }
 
                 if (successMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     Text(
                         text = successMessage,
-                        color = Color(0xFF2E7D32),
+                        color = colors.primary,
                         fontSize = 13.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(26.dp))
 
         // Saved goals
 
         Text(
             text = "My Daily Goals",
-            fontSize = 20.sp,
+            fontSize = 21.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
+            color = colors.onBackground
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "Keep track of your daily achievements.",
+            fontSize = 13.sp,
+            color = colors.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(14.dp))
 
         if (isLoading) {
 
-            CircularProgressIndicator()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(30.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
 
         } else if (goals.isEmpty()) {
 
-            Text(
-                text = "No daily goals added yet.",
-                color = Color.Gray
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colors.surface
+                )
+            ) {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    Text(
+                        text = "🎯",
+                        fontSize = 38.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "No Daily Goals Yet",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "Create your first goal above and start tracking your progress.",
+                        fontSize = 13.sp,
+                        color = colors.onSurfaceVariant
+                    )
+                }
+            }
 
         } else {
 
-            goals.forEach { goal ->
+            val sortedGoals = goals.sortedWith(
+                compareBy<DailyGoal> { it.completed }
+                    .thenByDescending { it.date }
+            )
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
-                ) {
+            sortedGoals.forEach { goal ->
 
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
+                DailyGoalCard(
+                    goal = goal,
+                    onAddHours = {
 
-                        Text(
-                            text = goal.title,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3F51B5)
-                        )
+                        if (currentUser != null && !goal.completed) {
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                            val newCompletedHours =
+                                (goal.completedHours + 0.5)
+                                    .coerceAtMost(goal.targetHours)
 
-                        Text("Date: ${goal.date}")
-
-                        Text(
-                            "Study time: ${goal.completedHours} / ${goal.targetHours} hours"
-                        )
-
-                        val goalProgress =
-                            if (goal.targetHours > 0) {
-                                (goal.completedHours / goal.targetHours)
-                                    .toFloat()
-                                    .coerceIn(0f, 1f)
-                            } else {
-                                0f
-                            }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        LinearProgressIndicator(
-                            progress = { goalProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp),
-                            color = Color(0xFF00897B),
-                            trackColor = Color.LightGray
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = if (goal.completed) {
-                                "Goal Completed"
-                            } else {
-                                "In Progress"
-                            },
-                            color = if (goal.completed) {
-                                Color(0xFF2E7D32)
-                            } else {
-                                Color(0xFFEF6C00)
-                            },
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-
-                            Button(
-                                onClick = {
-
-                                    if (currentUser != null) {
-
-                                        val newCompletedHours =
-                                            (goal.completedHours + 0.5)
-                                                .coerceAtMost(goal.targetHours)
-
-                                        firestore
-                                            .collection("users")
-                                            .document(currentUser.uid)
-                                            .collection("dailyGoals")
-                                            .document(goal.id)
-                                            .update(
-                                                mapOf(
-                                                    "completedHours" to newCompletedHours,
-                                                    "completed" to (newCompletedHours >= goal.targetHours)
+                            firestore
+                                .collection("users")
+                                .document(currentUser.uid)
+                                .collection("dailyGoals")
+                                .document(goal.id)
+                                .update(
+                                    mapOf(
+                                        "completedHours" to newCompletedHours,
+                                        "completed" to (
+                                                newCompletedHours >= goal.targetHours
                                                 )
-                                            )
-                                            .addOnFailureListener { exception ->
-                                                errorMessage = exception.message
-                                                    ?: "Failed to update goal."
-                                            }
-                                    }
-                                },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF00897B)
-                                ),
-                                enabled = !goal.completed
-                            ) {
-                                Text("+ 0.5 Hour")
-                            }
-
-                            Button(
-                                onClick = {
-
-                                    if (currentUser != null) {
-
-                                        firestore
-                                            .collection("users")
-                                            .document(currentUser.uid)
-                                            .collection("dailyGoals")
-                                            .document(goal.id)
-                                            .delete()
-                                            .addOnFailureListener { exception ->
-                                                errorMessage = exception.message
-                                                    ?: "Failed to delete goal."
-                                            }
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFD32F2F)
+                                    )
                                 )
-                            ) {
-                                Text("Delete")
-                            }
+                                .addOnFailureListener { exception ->
+
+                                    errorMessage = exception.message
+                                        ?: "Failed to update goal."
+                                }
+                        }
+                    },
+                    onDelete = {
+
+                        if (currentUser != null) {
+
+                            firestore
+                                .collection("users")
+                                .document(currentUser.uid)
+                                .collection("dailyGoals")
+                                .document(goal.id)
+                                .delete()
+                                .addOnFailureListener { exception ->
+
+                                    errorMessage = exception.message
+                                        ?: "Failed to delete goal."
+                                }
                         }
                     }
-                }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
 
@@ -544,39 +604,227 @@ fun DailyGoalsScreen() {
     }
 }
 
+// Summary card
+
 @Composable
 fun GoalSummaryCard(
     title: String,
     value: String,
     modifier: Modifier = Modifier,
-    color: Color
+    color: androidx.compose.ui.graphics.Color
 ) {
+
+    val colors = MaterialTheme.colorScheme
 
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = color
         ),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(15.dp),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
 
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp, horizontal = 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             Text(
                 text = title,
-                fontSize = 12.sp,
-                color = Color.DarkGray
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.onSurfaceVariant
             )
+
+            Spacer(modifier = Modifier.height(5.dp))
 
             Text(
                 text = value,
                 fontSize = 23.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
+                color = colors.primary
             )
+        }
+    }
+}
+
+// Individual daily goal card
+
+@Composable
+private fun DailyGoalCard(
+    goal: DailyGoal,
+    onAddHours: () -> Unit,
+    onDelete: () -> Unit
+) {
+
+    val colors = MaterialTheme.colorScheme
+
+    val goalProgress = if (goal.targetHours > 0) {
+        (goal.completedHours / goal.targetHours)
+            .toFloat()
+            .coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(17.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = colors.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
+    ) {
+
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = goal.title,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "📅 ${goal.date}",
+                        fontSize = 12.sp,
+                        color = colors.onSurfaceVariant
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (goal.completed) {
+                        colors.primaryContainer
+                    } else {
+                        colors.tertiaryContainer
+                    }
+                ) {
+
+                    Text(
+                        text = if (goal.completed) {
+                            "Completed"
+                        } else {
+                            "In Progress"
+                        },
+                        modifier = Modifier.padding(
+                            horizontal = 10.dp,
+                            vertical = 6.dp
+                        ),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (goal.completed) {
+                            colors.onPrimaryContainer
+                        } else {
+                            colors.onTertiaryContainer
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Text(
+                    text = "Study Progress",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.onSurface
+                )
+
+                Text(
+                    text = "${"%.1f".format(goal.completedHours)} / ${"%.1f".format(goal.targetHours)} hrs",
+                    fontSize = 12.sp,
+                    color = colors.onSurfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(9.dp))
+
+            LinearProgressIndicator(
+                progress = { goalProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(9.dp),
+                color = colors.primary,
+                trackColor = colors.surfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(7.dp))
+
+            Text(
+                text = "${(goalProgress * 100).toInt()}% completed",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = colors.primary
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Button(
+                    onClick = onAddHours,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    enabled = !goal.completed,
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+
+                    Text(
+                        text = "+ 0.5 Hour",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = colors.error
+                    )
+                ) {
+
+                    Text(
+                        text = "Delete",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
         }
     }
 }

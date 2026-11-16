@@ -1,38 +1,25 @@
 
 package com.example.personalacademicassistant
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -49,7 +36,7 @@ fun AIAssistantScreen() {
     val messages = remember {
         mutableStateListOf(
             ChatMessage(
-                text = "Hello! I'm your AI Academic Assistant. 🎓\n\nAsk me about programming, subjects, exams, study plans or any academic topic!",
+                text = "Hello! I'm your AI Academic Assistant. 🎓\n\nI can help you understand concepts, solve programming doubts, prepare for exams and create study plans.\n\nWhat would you like to learn today?",
                 isUser = false
             )
         )
@@ -60,8 +47,9 @@ fun AIAssistantScreen() {
 
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
-    // Firebase AI Logic Gemini model
     val model = remember {
         Firebase.ai(
             backend = GenerativeBackend.googleAI(),
@@ -71,7 +59,9 @@ fun AIAssistantScreen() {
 
     LaunchedEffect(messages.size, isLoading) {
         if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+            listState.animateScrollToItem(
+                if (isLoading) messages.size else messages.size - 1
+            )
         }
     }
 
@@ -94,6 +84,9 @@ fun AIAssistantScreen() {
         userInput = ""
         isLoading = true
 
+        keyboardController?.hide()
+        focusManager.clearFocus()
+
         coroutineScope.launch {
 
             try {
@@ -112,6 +105,7 @@ fun AIAssistantScreen() {
                     6. Give clear, beginner-friendly answers.
 
                     Keep answers organized and easy to understand.
+                    Use headings, numbered steps and examples when useful.
 
                     Previous conversation:
                     $previousConversation
@@ -135,52 +129,111 @@ fun AIAssistantScreen() {
 
                 messages.add(
                     ChatMessage(
-                        text = "Sorry, something went wrong while contacting Gemini.\n\n" +
-                                "Error: ${e.localizedMessage ?: "Unknown error"}",
+                        text = "Sorry, something went wrong while contacting Gemini.\n\nError: ${e.localizedMessage ?: "Unknown error"}",
                         isUser = false
                     )
                 )
 
             } finally {
-
                 isLoading = false
-
             }
         }
     }
 
+    val suggestions = listOf(
+        "Explain Kotlin basics",
+        "What is machine learning?",
+        "Help me prepare for exams",
+        "Explain data structures"
+    )
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .imePadding()
+            .imePadding(),
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(12.dp)
         ) {
 
-            Text(
-                text = "🎓 AI Academic Assistant",
-                style = MaterialTheme.typography.headlineSmall
+            // Header
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 18.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🎓",
+                        fontSize = 25.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "AI Academic Assistant",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "Powered by Gemini AI",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = "AI",
+                        modifier = Modifier.padding(
+                            horizontal = 13.dp,
+                            vertical = 7.dp
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            Text(
-                text = "Powered by Gemini AI",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.padding(6.dp))
+            // Chat Messages
 
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp),
                 state = listState,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
 
                 items(messages) { message ->
@@ -191,26 +244,80 @@ fun AIAssistantScreen() {
                             Arrangement.End
                         } else {
                             Arrangement.Start
-                        }
+                        },
+                        verticalAlignment = Alignment.Bottom
                     ) {
 
+                        if (!message.isUser) {
+
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("🎓", fontSize = 16.sp)
+                            }
+
+                            Spacer(modifier = Modifier.width(7.dp))
+                        }
+
                         Card(
-                            modifier = Modifier.fillMaxWidth(0.88f),
-                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(0.84f),
+                            shape = RoundedCornerShape(
+                                topStart = 18.dp,
+                                topEnd = 18.dp,
+                                bottomStart = if (message.isUser) 18.dp else 4.dp,
+                                bottomEnd = if (message.isUser) 4.dp else 18.dp
+                            ),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (message.isUser) {
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.primary
                                 } else {
-                                    MaterialTheme.colorScheme.secondaryContainer
+                                    MaterialTheme.colorScheme.surfaceVariant
                                 }
+                            ),
+                            elevation = CardDefaults.cardElevation(
+                                defaultElevation = 1.dp
                             )
                         ) {
 
-                            Text(
-                                text = message.text,
-                                modifier = Modifier.padding(14.dp),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                            Column(
+                                modifier = Modifier.padding(14.dp)
+                            ) {
+
+                                Text(
+                                    text = if (message.isUser) {
+                                        "You"
+                                    } else {
+                                        "Academic Assistant"
+                                    },
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (message.isUser) {
+                                        MaterialTheme.colorScheme.onPrimary.copy(
+                                            alpha = 0.8f
+                                        )
+                                    } else {
+                                        MaterialTheme.colorScheme.primary
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(5.dp))
+
+                                Text(
+                                    text = message.text,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (message.isUser) {
+                                        MaterialTheme.colorScheme.onPrimary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -223,45 +330,146 @@ fun AIAssistantScreen() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
 
-                            CircularProgressIndicator(
+                            Box(
                                 modifier = Modifier
-                                    .padding(8.dp)
-                                    .width(22.dp),
-                                strokeWidth = 2.dp
-                            )
+                                    .size(32.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                        CircleShape
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("🎓", fontSize = 16.sp)
+                            }
 
-                            Text("Gemini is thinking...")
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+
+                                Row(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp
+                                    )
+
+                                    Spacer(modifier = Modifier.width(10.dp))
+
+                                    Text(
+                                        text = "Gemini is thinking...",
+                                        fontSize = 13.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.padding(4.dp))
+            // Suggested Questions
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            if (messages.size == 1 && !isLoading) {
 
-                OutlinedTextField(
-                    value = userInput,
-                    onValueChange = { userInput = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = {
-                        Text("Ask your academic question...")
-                    },
-                    maxLines = 4,
-                    shape = RoundedCornerShape(16.dp)
-                )
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Button(
-                    onClick = { sendMessage() },
-                    enabled = userInput.isNotBlank() && !isLoading
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
 
-                    Text("Send")
+                    Text(
+                        text = "Try asking",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    suggestions.forEach { suggestion ->
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 7.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            onClick = {
+                                userInput = suggestion
+                            }
+                        ) {
+                            Text(
+                                text = "✨  $suggestion",
+                                modifier = Modifier.padding(12.dp),
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Message Input
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 5.dp
+            ) {
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    OutlinedTextField(
+                        value = userInput,
+                        onValueChange = {
+                            userInput = it
+                        },
+                        modifier = Modifier.weight(1f),
+                        placeholder = {
+                            Text("Ask your academic question...")
+                        },
+                        shape = RoundedCornerShape(18.dp),
+                        maxLines = 4,
+                        enabled = !isLoading,
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Send
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSend = {
+                                sendMessage()
+                            }
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(
+                        onClick = {
+                            sendMessage()
+                        },
+                        enabled = userInput.isNotBlank() && !isLoading,
+                        modifier = Modifier.height(52.dp),
+                        shape = RoundedCornerShape(15.dp),
+                        contentPadding = PaddingValues(horizontal = 15.dp)
+                    ) {
+                        Text(
+                            text = "Send",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
