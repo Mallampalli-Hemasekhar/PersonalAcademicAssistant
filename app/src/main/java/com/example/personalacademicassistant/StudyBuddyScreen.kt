@@ -1,33 +1,19 @@
 
 package com.example.personalacademicassistant
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.UUID
@@ -57,156 +43,433 @@ fun StudyBuddyScreen() {
     var subject by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var joinCode by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf("") }
 
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            db.collection("users")
+    var message by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(true) }
+
+    DisposableEffect(userId) {
+
+        if (userId == null) {
+            isLoading = false
+            message = "Please log in to access study groups."
+            onDispose { }
+        } else {
+
+            isLoading = true
+
+            val listener = db.collection("users")
                 .document(userId)
                 .collection("studyBuddyMemberships")
                 .addSnapshotListener { snapshot, error ->
-                    if (error != null || snapshot == null) return@addSnapshotListener
+
+                    if (error != null) {
+                        message = error.localizedMessage
+                            ?: "Unable to load your study groups."
+                        isLoading = false
+                        return@addSnapshotListener
+                    }
+
+                    if (snapshot == null) {
+                        isLoading = false
+                        return@addSnapshotListener
+                    }
 
                     val groupIds = snapshot.documents.map { it.id }
 
                     if (groupIds.isEmpty()) {
                         groups.clear()
+                        isLoading = false
                         return@addSnapshotListener
                     }
 
-                    db.collection("studyGroups")
-                        .whereIn(
-                            com.google.firebase.firestore.FieldPath.documentId(),
-                            groupIds.take(10)
-                        )
-                        .get()
-                        .addOnSuccessListener { result ->
-                            groups.clear()
-                            groups.addAll(
-                                result.documents.mapNotNull { document ->
-                                    document.toObject(StudyGroup::class.java)
-                                        ?.copy(id = document.id)
+                    val batches = groupIds.chunked(10)
+                    val loadedGroups = mutableListOf<StudyGroup>()
+                    var completedBatches = 0
+
+                    batches.forEach { batch ->
+
+                        db.collection("studyGroups")
+                            .whereIn(FieldPath.documentId(), batch)
+                            .get()
+                            .addOnSuccessListener { result ->
+
+                                loadedGroups.addAll(
+                                    result.documents.mapNotNull { document ->
+                                        document.toObject(StudyGroup::class.java)
+                                            ?.copy(id = document.id)
+                                    }
+                                )
+
+                                completedBatches++
+
+                                if (completedBatches == batches.size) {
+                                    groups.clear()
+                                    groups.addAll(
+                                        loadedGroups.sortedBy {
+                                            it.name.lowercase()
+                                        }
+                                    )
+                                    isLoading = false
                                 }
-                            )
-                        }
+                            }
+                            .addOnFailureListener { exception ->
+
+                                completedBatches++
+
+                                message = exception.localizedMessage
+                                    ?: "Unable to load some study groups."
+
+                                if (completedBatches == batches.size) {
+                                    groups.clear()
+                                    groups.addAll(
+                                        loadedGroups.sortedBy {
+                                            it.name.lowercase()
+                                        }
+                                    )
+                                    isLoading = false
+                                }
+                            }
+                    }
                 }
+
+            onDispose {
+                listener.remove()
+            }
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
 
         Text(
-            text = "Study Buddy & Collaboration",
-            style = MaterialTheme.typography.headlineSmall
+            text = "Study Buddy",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        Text("Create study groups and learn together.")
+        Text(
+            text = "Learn together, share knowledge and stay motivated.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(18.dp)
+            ) {
+                Text(
+                    text = "Your Learning Community",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Create a group for your subject or join an existing group with an invitation code.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "${groups.size} Study Groups",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Button(
                 onClick = {
-                    showCreateDialog = true
+                    groupName = ""
+                    subject = ""
+                    description = ""
                     message = ""
+                    showCreateDialog = true
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Create Group")
+                Text("＋ Create Group")
             }
 
-            Button(
+            OutlinedButton(
                 onClick = {
-                    showJoinDialog = true
+                    joinCode = ""
                     message = ""
+                    showJoinDialog = true
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Text("Join Group")
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(22.dp))
 
-        Text(
-            text = "My Study Groups",
-            style = MaterialTheme.typography.titleLarge
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "My Study Groups",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "${groups.size} groups",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
 
-        if (groups.isEmpty()) {
-            Text("No study groups yet. Create or join a group!")
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        if (isLoading) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
             ) {
-                items(groups, key = { it.id }) { group ->
+                CircularProgressIndicator()
+            }
+
+        } else if (groups.isEmpty()) {
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "📚",
+                            style = MaterialTheme.typography.displaySmall
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = "No study groups yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Text(
+                            text = "Create your first group or join one using a group code.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+        } else {
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(
+                    items = groups,
+                    key = { it.id }
+                ) { group ->
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        elevation = CardDefaults.cardElevation(
+                            defaultElevation = 2.dp
+                        ),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            containerColor = MaterialTheme.colorScheme.surface
                         )
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp)
                         ) {
+
                             Text(
-                                group.name,
-                                style = MaterialTheme.typography.titleMedium
+                                text = group.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
-                            Text("Subject: ${group.subject}")
-                            Text("Description: ${group.description}")
-                            Text("Group Code: ${group.groupCode}")
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer
+                            ) {
+                                Text(
+                                    text = group.subject,
+                                    modifier = Modifier.padding(
+                                        horizontal = 10.dp,
+                                        vertical = 5.dp
+                                    ),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            }
+
+                            if (group.description.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                Text(
+                                    text = group.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "GROUP INVITATION CODE",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = group.groupCode,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
             }
         }
+
+        if (message.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 
+    // Create Study Group Dialog
+
     if (showCreateDialog) {
+
         AlertDialog(
-            onDismissRequest = { showCreateDialog = false },
-            title = { Text("Create Study Group") },
+            onDismissRequest = {
+                showCreateDialog = false
+            },
+            title = {
+                Text(
+                    text = "Create Study Group",
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = {
-                Column {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Set up a group and invite your classmates using its unique code.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
                     OutlinedTextField(
                         value = groupName,
                         onValueChange = { groupName = it },
-                        label = { Text("Group Name") }
+                        label = { Text("Group Name") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
                     OutlinedTextField(
                         value = subject,
                         onValueChange = { subject = it },
-                        label = { Text("Subject") }
+                        label = { Text("Subject") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
 
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        label = { Text("Description") }
+                        label = { Text("Description (optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        maxLines = 3
                     )
 
-                    if (message.isNotEmpty()) {
-                        Text(message)
+                    if (message.isNotBlank()) {
+                        Text(
+                            text = message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+
                         if (userId == null) {
                             message = "Please log in first."
                         } else if (
@@ -215,13 +478,14 @@ fun StudyBuddyScreen() {
                         ) {
                             message = "Enter group name and subject."
                         } else {
+
                             val groupId = UUID.randomUUID().toString()
                             val code = UUID.randomUUID()
                                 .toString()
                                 .take(6)
                                 .uppercase()
 
-                            val group = hashMapOf(
+                            val groupData = hashMapOf(
                                 "id" to groupId,
                                 "name" to groupName.trim(),
                                 "subject" to subject.trim(),
@@ -232,8 +496,9 @@ fun StudyBuddyScreen() {
 
                             db.collection("studyGroups")
                                 .document(groupId)
-                                .set(group)
+                                .set(groupData)
                                 .addOnSuccessListener {
+
                                     db.collection("users")
                                         .document(userId)
                                         .collection("studyBuddyMemberships")
@@ -244,68 +509,108 @@ fun StudyBuddyScreen() {
                                             )
                                         )
                                         .addOnSuccessListener {
+
                                             groupName = ""
                                             subject = ""
                                             description = ""
+                                            message = ""
                                             showCreateDialog = false
                                         }
-                                        .addOnFailureListener {
-                                            message = it.localizedMessage
+                                        .addOnFailureListener { exception ->
+                                            message = exception.localizedMessage
                                                 ?: "Membership could not be saved."
                                         }
                                 }
-                                .addOnFailureListener {
-                                    message = it.localizedMessage
+                                .addOnFailureListener { exception ->
+                                    message = exception.localizedMessage
                                         ?: "Could not create group."
                                 }
                         }
-                    }
+                    },
+                    enabled = !isLoading
                 ) {
-                    Text("Create")
+                    Text("Create Group")
                 }
             },
             dismissButton = {
-                Button(onClick = { showCreateDialog = false }) {
+                TextButton(
+                    onClick = {
+                        showCreateDialog = false
+                        message = ""
+                    }
+                ) {
                     Text("Cancel")
                 }
             }
         )
     }
 
+    // Join Study Group Dialog
+
     if (showJoinDialog) {
+
         AlertDialog(
-            onDismissRequest = { showJoinDialog = false },
-            title = { Text("Join Study Group") },
+            onDismissRequest = {
+                showJoinDialog = false
+            },
+            title = {
+                Text(
+                    text = "Join Study Group",
+                    fontWeight = FontWeight.Bold
+                )
+            },
             text = {
-                Column {
-                    OutlinedTextField(
-                        value = joinCode,
-                        onValueChange = { joinCode = it.uppercase() },
-                        label = { Text("Enter Group Code") }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Enter the six-character invitation code shared by your study group.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    if (message.isNotEmpty()) {
-                        Text(message)
+                    OutlinedTextField(
+                        value = joinCode,
+                        onValueChange = {
+                            joinCode = it.uppercase().take(6)
+                        },
+                        label = { Text("Group Invitation Code") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    if (message.isNotBlank()) {
+                        Text(
+                            text = message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
+
                         if (userId == null) {
                             message = "Please log in first."
                         } else if (joinCode.isBlank()) {
                             message = "Enter a group code."
                         } else {
+
                             db.collection("studyGroups")
                                 .whereEqualTo("groupCode", joinCode.trim())
                                 .get()
                                 .addOnSuccessListener { result ->
+
                                     val document = result.documents.firstOrNull()
 
                                     if (document == null) {
+
                                         message = "Invalid group code."
+
                                     } else {
+
                                         db.collection("users")
                                             .document(userId)
                                             .collection("studyBuddyMemberships")
@@ -316,27 +621,34 @@ fun StudyBuddyScreen() {
                                                 )
                                             )
                                             .addOnSuccessListener {
+
                                                 joinCode = ""
+                                                message = ""
                                                 showJoinDialog = false
                                             }
-                                            .addOnFailureListener {
-                                                message = it.localizedMessage
+                                            .addOnFailureListener { exception ->
+                                                message = exception.localizedMessage
                                                     ?: "Could not join group."
                                             }
                                     }
                                 }
-                                .addOnFailureListener {
-                                    message = it.localizedMessage
+                                .addOnFailureListener { exception ->
+                                    message = exception.localizedMessage
                                         ?: "Could not find group."
                                 }
                         }
                     }
                 ) {
-                    Text("Join")
+                    Text("Join Group")
                 }
             },
             dismissButton = {
-                Button(onClick = { showJoinDialog = false }) {
+                TextButton(
+                    onClick = {
+                        showJoinDialog = false
+                        message = ""
+                    }
+                ) {
                     Text("Cancel")
                 }
             }

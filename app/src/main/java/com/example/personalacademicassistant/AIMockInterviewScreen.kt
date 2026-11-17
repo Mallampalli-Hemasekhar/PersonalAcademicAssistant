@@ -3,46 +3,21 @@ package com.example.personalacademicassistant
 
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.Firebase
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.ai
+import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -73,7 +48,7 @@ fun AIMockInterviewScreen() {
     var difficulty by remember { mutableStateOf("Intermediate") }
 
     var questions by remember { mutableStateOf<List<String>>(emptyList()) }
-    var selectedQuestion by remember { mutableStateOf(0) }
+    var selectedQuestion by remember { mutableIntStateOf(0) }
 
     var candidateAnswer by remember { mutableStateOf("") }
     var evaluation by remember { mutableStateOf("") }
@@ -85,9 +60,10 @@ fun AIMockInterviewScreen() {
     var errorMessage by remember { mutableStateOf("") }
     var successMessage by remember { mutableStateOf("") }
 
-    val primaryColor = Color(0xFF3949AB)
+    val colors = MaterialTheme.colorScheme
 
     fun readableError(error: Exception): String {
+
         val message = error.message.orEmpty()
         val details = message.lowercase()
 
@@ -126,17 +102,19 @@ fun AIMockInterviewScreen() {
 
     fun generateQuestions() {
 
-        if (isGenerating) return
+        if (isGenerating || isEvaluating || isSaving) return
 
         errorMessage = ""
         successMessage = ""
         evaluation = ""
         candidateAnswer = ""
         questions = emptyList()
+        selectedQuestion = 0
 
         isGenerating = true
 
         scope.launch {
+
             try {
 
                 val prompt = """
@@ -191,7 +169,8 @@ fun AIMockInterviewScreen() {
                 questions = parsedQuestions
                 selectedQuestion = 0
 
-                successMessage = "Five interview questions generated successfully!"
+                successMessage =
+                    "Five interview questions generated successfully!"
 
                 Log.d(
                     MOCK_INTERVIEW_TAG,
@@ -222,7 +201,7 @@ fun AIMockInterviewScreen() {
 
     fun evaluateAnswer() {
 
-        if (isEvaluating) return
+        if (isEvaluating || isGenerating || isSaving) return
 
         if (questions.isEmpty()) {
             errorMessage = "Generate interview questions first."
@@ -240,6 +219,7 @@ fun AIMockInterviewScreen() {
         isEvaluating = true
 
         scope.launch {
+
             try {
 
                 val question = questions[selectedQuestion]
@@ -325,7 +305,7 @@ fun AIMockInterviewScreen() {
 
     fun saveInterview() {
 
-        if (isSaving) return
+        if (isSaving || isGenerating || isEvaluating) return
 
         val user = auth.currentUser
 
@@ -367,7 +347,6 @@ fun AIMockInterviewScreen() {
                 )
 
                 successMessage = "Interview saved successfully!"
-
                 isSaving = false
             }
             .addOnFailureListener { exception ->
@@ -388,57 +367,209 @@ fun AIMockInterviewScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F6FC))
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        Text(
-            text = "🎤 AI Mock Interview",
-            fontSize = 23.sp,
-            fontWeight = FontWeight.Bold,
-            color = primaryColor
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Practice interviews with Gemini AI and improve your confidence.",
-            fontSize = 14.sp,
-            color = Color.DarkGray
-        )
-
-        Spacer(modifier = Modifier.height(18.dp))
+        // Header
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE4E5F0)
+                containerColor = colors.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Surface(
+                    modifier = Modifier.size(58.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = colors.primary
+                ) {
+
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "🎤",
+                            fontSize = 29.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = "AI Mock Interview",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onPrimaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "Practice real interview questions and improve your confidence with Gemini AI.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onPrimaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(9.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(50.dp),
+                        color = colors.primary.copy(alpha = 0.15f)
+                    ) {
+
+                        Text(
+                            text = "✨ AI Powered Practice",
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = 5.dp
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        }
+
+        // Interview progress summary
+
+        if (questions.isNotEmpty()) {
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colors.secondaryContainer
+                )
+            ) {
+
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+
+                    Text(
+                        text = "Your Interview Progress",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.onSecondaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        InterviewStat(
+                            value = "${questions.size}",
+                            label = "Questions"
+                        )
+
+                        InterviewStat(
+                            value = "${selectedQuestion + 1}/5",
+                            label = "Current"
+                        )
+
+                        InterviewStat(
+                            value = if (evaluation.isNotBlank()) "Done" else "Pending",
+                            label = "Evaluation"
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    LinearProgressIndicator(
+                        progress = {
+                            (selectedQuestion + 1) / 5f
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(7.dp),
+                        color = colors.primary,
+                        trackColor = colors.surfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Setup heading
+
+        Column {
+
+            Text(
+                text = "Prepare Your Interview",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
             )
+
+            Text(
+                text = "Choose your role, interview type and difficulty.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant
+            )
+        }
+
+        // Setup card
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = colors.surface
+            ),
+            elevation = CardDefaults.cardElevation(2.dp)
         ) {
 
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
 
                 Text(
-                    text = "Interview Setup",
-                    fontSize = 18.sp,
+                    text = "⚙️ Interview Settings",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                HorizontalDivider()
 
                 OutlinedTextField(
                     value = jobRole,
-                    onValueChange = { jobRole = it },
-                    label = { Text("Job Role / Subject") },
+                    onValueChange = {
+                        jobRole = it
+                        errorMessage = ""
+                    },
+                    label = {
+                        Text("Job Role / Subject")
+                    },
+                    placeholder = {
+                        Text("Example: Android Developer")
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    enabled = !isGenerating && !isEvaluating && !isSaving
                 )
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 InterviewDropdown(
                     label = "Interview Type",
@@ -449,10 +580,11 @@ fun AIMockInterviewScreen() {
                         "Behavioral",
                         "Mixed"
                     ),
-                    onSelect = { interviewType = it }
+                    enabled = !isGenerating && !isEvaluating && !isSaving,
+                    onSelect = {
+                        interviewType = it
+                    }
                 )
-
-                Spacer(modifier = Modifier.height(12.dp))
 
                 InterviewDropdown(
                     label = "Difficulty Level",
@@ -462,224 +594,423 @@ fun AIMockInterviewScreen() {
                         "Intermediate",
                         "Advanced"
                     ),
-                    onSelect = { difficulty = it }
+                    enabled = !isGenerating && !isEvaluating && !isSaving,
+                    onSelect = {
+                        difficulty = it
+                    }
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
-
                 Button(
-                    onClick = { generateQuestions() },
+                    onClick = {
+                        generateQuestions()
+                    },
                     enabled = !isGenerating &&
                             !isEvaluating &&
                             !isSaving &&
                             jobRole.isNotBlank(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = primaryColor
-                    )
+                        .height(54.dp),
+                    shape = RoundedCornerShape(15.dp)
                 ) {
 
                     if (isGenerating) {
+
                         CircularProgressIndicator(
-                            modifier = Modifier.height(22.dp),
-                            color = Color.White,
+                            modifier = Modifier.size(22.dp),
+                            color = colors.onPrimary,
                             strokeWidth = 2.dp
                         )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text("Generating Questions...")
+
                     } else {
-                        Text("✨ Generate Interview Questions")
+
+                        Text(
+                            text = "✨ Generate Interview Questions",
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
         }
 
         if (isGenerating) {
-            LoadingMessage("Generating your five interview questions...")
+            InterviewLoadingCard(
+                message = "Gemini is preparing your five interview questions..."
+            )
         }
+
+        // Generated questions
 
         if (questions.isNotEmpty()) {
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Column {
 
-            Text(
-                text = "Your Interview Questions",
-                fontSize = 19.sp,
-                fontWeight = FontWeight.Bold,
-                color = primaryColor
-            )
+                Text(
+                    text = "Your Interview Questions",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
 
-            Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Select a question to write and evaluate your answer.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+            }
 
             questions.forEachIndexed { index, question ->
 
+                val isSelected = selectedQuestion == index
+
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 5.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(17.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (selectedQuestion == index)
-                            Color(0xFFE0E5FF)
-                        else
-                            Color.White
+                        containerColor = if (isSelected) {
+                            colors.primaryContainer
+                        } else {
+                            colors.surface
+                        }
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = if (isSelected) 3.dp else 1.dp
                     )
                 ) {
 
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+
+                        Surface(
+                            modifier = Modifier.size(38.dp),
+                            shape = CircleShape,
+                            color = if (isSelected) {
+                                colors.primary
+                            } else {
+                                colors.surfaceVariant
+                            }
+                        ) {
+
+                            Box(
+                                contentAlignment = Alignment.Center
+                            ) {
+
+                                Text(
+                                    text = "${index + 1}",
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) {
+                                        colors.onPrimary
+                                    } else {
+                                        colors.onSurfaceVariant
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
 
                         Column(
                             modifier = Modifier.weight(1f)
                         ) {
+
                             Text(
                                 text = "Question ${index + 1}",
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = primaryColor
+                                color = colors.primary
                             )
 
                             Spacer(modifier = Modifier.height(5.dp))
 
-                            Text(text = question)
+                            Text(
+                                text = question,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurface
+                            )
                         }
 
-                        TextButton(
-                            onClick = {
-                                selectedQuestion = index
-                                candidateAnswer = ""
-                                evaluation = ""
-                                errorMessage = ""
-                                successMessage = ""
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        if (isSelected) {
+
+                            Surface(
+                                shape = RoundedCornerShape(50.dp),
+                                color = colors.primary
+                            ) {
+
+                                Text(
+                                    text = "Selected",
+                                    modifier = Modifier.padding(
+                                        horizontal = 9.dp,
+                                        vertical = 6.dp
+                                    ),
+                                    color = colors.onPrimary,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
                             }
-                        ) {
-                            Text(
-                                if (selectedQuestion == index)
-                                    "Selected"
-                                else
-                                    "Answer"
-                            )
+
+                        } else {
+
+                            TextButton(
+                                onClick = {
+                                    selectedQuestion = index
+                                    candidateAnswer = ""
+                                    evaluation = ""
+                                    errorMessage = ""
+                                    successMessage = ""
+                                },
+                                enabled = !isEvaluating &&
+                                        !isSaving &&
+                                        !isGenerating
+                            ) {
+                                Text("Answer")
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(15.dp))
+            // Answer section
 
-            Text(
-                text = "Your Answer",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Column {
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = questions[selectedQuestion],
-                fontSize = 14.sp,
-                color = primaryColor,
-                fontWeight = FontWeight.Medium
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            OutlinedTextField(
-                value = candidateAnswer,
-                onValueChange = {
-                    candidateAnswer = it
-                    evaluation = ""
-                    successMessage = ""
-                    errorMessage = ""
-                },
-                label = { Text("Write your answer here") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = { evaluateAnswer() },
-                enabled = !isEvaluating &&
-                        !isGenerating &&
-                        !isSaving &&
-                        candidateAnswer.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = primaryColor
+                Text(
+                    text = "Write Your Answer",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
+
+                Text(
+                    text = "Take your time and answer as if you were in a real interview.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant
+                )
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colors.surface
+                ),
+                elevation = CardDefaults.cardElevation(2.dp)
             ) {
 
-                if (isEvaluating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.height(20.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+
+                    Text(
+                        text = "Question ${selectedQuestion + 1}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.primary
                     )
-                } else {
-                    Text("Evaluate My Answer")
+
+                    Text(
+                        text = questions[selectedQuestion],
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = colors.onSurface
+                    )
+
+                    HorizontalDivider()
+
+                    OutlinedTextField(
+                        value = candidateAnswer,
+                        onValueChange = {
+                            candidateAnswer = it
+                            evaluation = ""
+                            successMessage = ""
+                            errorMessage = ""
+                        },
+                        label = {
+                            Text("Your Answer")
+                        },
+                        placeholder = {
+                            Text("Write your answer here...")
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(165.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        enabled = !isEvaluating &&
+                                !isGenerating &&
+                                !isSaving
+                    )
+
+                    Text(
+                        text = "Tip: Explain your reasoning and include examples where possible.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant
+                    )
+
+                    Button(
+                        onClick = {
+                            evaluateAnswer()
+                        },
+                        enabled = !isEvaluating &&
+                                !isGenerating &&
+                                !isSaving &&
+                                candidateAnswer.isNotBlank(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+
+                        if (isEvaluating) {
+
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(21.dp),
+                                color = colors.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+
+                            Spacer(modifier = Modifier.width(10.dp))
+
+                            Text("Evaluating...")
+
+                        } else {
+
+                            Text(
+                                text = "✨ Evaluate My Answer",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
 
             if (isEvaluating) {
-                LoadingMessage("Gemini is evaluating your answer...")
+
+                InterviewLoadingCard(
+                    message = "Gemini is evaluating your answer..."
+                )
             }
+
+            // Evaluation result
 
             if (evaluation.isNotBlank()) {
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Column {
+
+                    Text(
+                        text = "Your Interview Evaluation",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "Review your feedback and identify areas to improve.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant
+                    )
+                }
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
+                        containerColor = colors.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(3.dp)
                 ) {
 
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(17.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
 
-                        Text(
-                            text = "📊 Interview Evaluation",
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = primaryColor
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Surface(
+                                modifier = Modifier.size(42.dp),
+                                shape = RoundedCornerShape(13.dp),
+                                color = colors.secondaryContainer
+                            ) {
+
+                                Box(
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "📊",
+                                        fontSize = 22.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(11.dp))
+
+                            Column {
+
+                                Text(
+                                    text = "AI Feedback Report",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Text(
+                                    text = "Powered by Gemini",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        HorizontalDivider()
 
                         Text(
                             text = evaluation,
-                            fontSize = 14.sp,
-                            lineHeight = 22.sp
+                            style = MaterialTheme.typography.bodyLarge,
+                            lineHeight = 24.sp,
+                            color = colors.onSurface
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
                         Button(
-                            onClick = { saveInterview() },
+                            onClick = {
+                                saveInterview()
+                            },
                             enabled = !isSaving &&
                                     !isGenerating &&
                                     !isEvaluating,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E7D32)
+                                containerColor = colors.tertiary
                             )
                         ) {
 
                             if (isSaving) {
+
                                 CircularProgressIndicator(
-                                    modifier = Modifier.height(20.dp),
-                                    color = Color.White,
+                                    modifier = Modifier.size(21.dp),
+                                    color = colors.onTertiary,
                                     strokeWidth = 2.dp
                                 )
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Text("Saving Interview...")
+
                             } else {
-                                Text("Save Interview to Firebase")
+
+                                Text(
+                                    text = "💾 Save Interview to Firebase",
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -687,56 +1018,112 @@ fun AIMockInterviewScreen() {
             }
         }
 
+        // Error message
+
         if (errorMessage.isNotBlank()) {
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colors.errorContainer
+                )
+            ) {
 
-            Text(
-                text = errorMessage,
-                color = Color(0xFFD32F2F),
-                fontSize = 14.sp
-            )
+                Text(
+                    text = "⚠️ $errorMessage",
+                    modifier = Modifier.padding(14.dp),
+                    color = colors.onErrorContainer,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
+
+        // Success message
 
         if (successMessage.isNotBlank()) {
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = colors.secondaryContainer
+                )
+            ) {
 
-            Text(
-                text = successMessage,
-                color = Color(0xFF2E7D32),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+                Text(
+                    text = "✓ $successMessage",
+                    modifier = Modifier.padding(14.dp),
+                    color = colors.onSecondaryContainer,
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(25.dp))
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
 @Composable
-private fun LoadingMessage(message: String) {
+private fun InterviewStat(
+    value: String,
+    label: String
+) {
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        CircularProgressIndicator(
-            modifier = Modifier.height(22.dp),
-            strokeWidth = 2.dp
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
         )
-
-        Spacer(modifier = Modifier.padding(6.dp))
 
         Text(
-            text = message,
-            fontSize = 13.sp,
-            color = Color.DarkGray
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
         )
+    }
+}
+
+@Composable
+private fun InterviewLoadingCard(
+    message: String
+) {
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            CircularProgressIndicator(
+                modifier = Modifier.size(25.dp),
+                strokeWidth = 2.dp
+            )
+
+            Spacer(modifier = Modifier.width(13.dp))
+
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Medium
+            )
+        }
     }
 }
 
@@ -745,50 +1132,96 @@ private fun InterviewDropdown(
     label: String,
     selectedValue: String,
     options: List<String>,
+    enabled: Boolean = true,
     onSelect: (String) -> Unit
 ) {
 
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by remember {
+        mutableStateOf(false)
+    }
 
-    Column {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
 
         Text(
             text = label,
-            fontSize = 13.sp,
-            color = Color.DarkGray
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Box {
+        Box(
+            modifier = Modifier.fillMaxWidth()
+        ) {
 
             OutlinedButton(
-                onClick = { expanded = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
+                onClick = {
+                    expanded = true
+                },
+                enabled = enabled,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp),
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(
+                    horizontal = 14.dp,
+                    vertical = 12.dp
+                )
             ) {
 
-                Text(
-                    text = selectedValue,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
 
-                Text("▼")
+                    Text(
+                        text = selectedValue,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = "▼",
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
 
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.background(Color.White)
+                onDismissRequest = {
+                    expanded = false
+                },
+                modifier = Modifier.background(
+                    MaterialTheme.colorScheme.surface
+                )
             ) {
 
                 options.forEach { option ->
 
                     DropdownMenuItem(
-                        text = { Text(option) },
+                        text = {
+                            Text(
+                                text = option,
+                                fontWeight = if (selectedValue == option) {
+                                    FontWeight.Bold
+                                } else {
+                                    FontWeight.Normal
+                                }
+                            )
+                        },
                         onClick = {
                             onSelect(option)
                             expanded = false
+                        },
+                        trailingIcon = {
+                            if (selectedValue == option) {
+                                Text(
+                                    text = "✓",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     )
                 }

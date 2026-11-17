@@ -2,38 +2,17 @@
 package com.example.personalacademicassistant
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -103,32 +82,103 @@ fun AICodeExplainerScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FB))
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
 
-        Text(
-            text = "AI Code Explainer",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF172554)
-        )
+        // Header
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
+            )
+        ) {
 
-        Text(
-            text = "Understand programming code with the help of AI.",
-            fontSize = 14.sp,
-            color = Color.Gray
-        )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "💻",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = "AI Code Explainer",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "Understand code, fix errors and improve your programming skills.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.tertiary,
+                                    CircleShape
+                                )
+                        )
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        Text(
+                            text = "Gemini AI Ready",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(22.dp))
 
+        // Programming language
+
         Text(
             text = "Programming Language",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -141,12 +191,14 @@ fun AICodeExplainerScreen() {
             }
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Explanation type
 
         Text(
             text = "What do you want AI to do?",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -159,15 +211,25 @@ fun AICodeExplainerScreen() {
             }
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Code input
 
         Text(
             text = "Paste Your Code",
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "Add your code below and let AI help you understand it.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
 
         OutlinedTextField(
             value = codeInput,
@@ -177,15 +239,19 @@ fun AICodeExplainerScreen() {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp),
+                .height(230.dp),
             placeholder = {
                 Text("Paste your programming code here...")
             },
             minLines = 8,
-            maxLines = 12
+            maxLines = 12,
+            enabled = !isLoading,
+            shape = RoundedCornerShape(16.dp)
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Analyze button
 
         Button(
             onClick = {
@@ -231,14 +297,17 @@ fun AICodeExplainerScreen() {
                 """.trimIndent()
 
                 scope.launch {
+
                     try {
 
                         val response = model.generateContent(prompt)
                         val answer = response.text
 
                         if (answer.isNullOrBlank()) {
+
                             errorMessage =
                                 "The AI returned an empty response. Please try again."
+
                         } else {
 
                             explanation = answer
@@ -270,6 +339,7 @@ fun AICodeExplainerScreen() {
                                     }
 
                             } else {
+
                                 saveMessage =
                                     "Sign in to save your explanations."
                             }
@@ -286,99 +356,194 @@ fun AICodeExplainerScreen() {
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF5E35B1)
-            )
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            enabled = !isLoading && codeInput.isNotBlank(),
+            shape = RoundedCornerShape(16.dp)
         ) {
+
             Text(
                 text = if (isLoading) {
                     "Analyzing Code..."
                 } else {
                     "✨ Explain My Code"
                 },
-                fontSize = 16.sp
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
             )
         }
+
+        // Loading indicator
 
         if (isLoading) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            CircularProgressIndicator(
-                modifier = Modifier.padding(8.dp),
-                color = Color(0xFF5E35B1)
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
 
-            Text(
-                text = "Gemini is analyzing your code...",
-                color = Color.Gray
-            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(18.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        strokeWidth = 3.dp
+                    )
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column {
+
+                        Text(
+                            text = "Gemini is analyzing your code...",
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+
+                        Spacer(modifier = Modifier.height(3.dp))
+
+                        Text(
+                            text = "Please wait while your explanation is prepared.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
         }
+
+        // Error message
 
         if (errorMessage.isNotBlank()) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFFEBEE)
-                ),
-                modifier = Modifier.fillMaxWidth()
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
             ) {
+
                 Text(
-                    text = errorMessage,
-                    color = Color(0xFFC62828),
-                    modifier = Modifier.padding(14.dp)
+                    text = "⚠️ $errorMessage",
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(14.dp),
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
+
+        // AI explanation
 
         if (explanation.isNotBlank()) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "AI Explanation",
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF172554)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = "✨ AI Explanation",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(50.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+
+                    Text(
+                        text = "Generated",
+                        modifier = Modifier.padding(
+                            horizontal = 12.dp,
+                            vertical = 6.dp
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 elevation = CardDefaults.cardElevation(
-                    defaultElevation = 3.dp
+                    defaultElevation = 2.dp
                 )
             ) {
-                Text(
-                    text = explanation,
-                    fontSize = 15.sp,
-                    lineHeight = 23.sp,
-                    color = Color(0xFF263238),
-                    modifier = Modifier.padding(16.dp)
-                )
+
+                Column(
+                    modifier = Modifier.padding(18.dp)
+                ) {
+
+                    Text(
+                        text = "Language: $programmingLanguage",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "Task: $explanationType",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 14.dp)
+                    )
+
+                    Text(
+                        text = explanation,
+                        style = MaterialTheme.typography.bodyLarge,
+                        lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             if (saveMessage.isNotBlank()) {
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                    text = saveMessage,
-                    color = if (saveMessage.startsWith("Explanation saved")) {
-                        Color(0xFF2E7D32)
-                    } else {
-                        Color(0xFFEF6C00)
-                    },
-                    fontSize = 13.sp
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+
+                    Text(
+                        text = "✓ $saveMessage",
+                        modifier = Modifier.padding(14.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
             }
         }
 
@@ -401,20 +566,37 @@ fun CodeOptionDropdown(
         modifier = Modifier.fillMaxWidth()
     ) {
 
-        Button(
+        OutlinedButton(
             onClick = {
                 expanded = true
             },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.White,
-                contentColor = Color(0xFF263238)
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 54.dp),
+            shape = RoundedCornerShape(14.dp),
+            contentPadding = PaddingValues(
+                horizontal = 16.dp,
+                vertical = 12.dp
             )
         ) {
-            Text(
-                text = "$selectedOption  ▼",
-                modifier = Modifier.fillMaxWidth()
-            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = selectedOption,
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Text(
+                    text = "▼",
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
 
         DropdownMenu(
@@ -422,18 +604,35 @@ fun CodeOptionDropdown(
             onDismissRequest = {
                 expanded = false
             },
-            modifier = Modifier.background(Color.White)
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
 
             options.forEach { option ->
 
                 DropdownMenuItem(
                     text = {
-                        Text(option)
+                        Text(
+                            text = option,
+                            fontWeight = if (selectedOption == option) {
+                                FontWeight.Bold
+                            } else {
+                                FontWeight.Normal
+                            }
+                        )
                     },
                     onClick = {
                         onOptionSelected(option)
                         expanded = false
+                    },
+                    trailingIcon = {
+                        if (selectedOption == option) {
+                            Text(
+                                text = "✓",
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 )
             }

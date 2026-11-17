@@ -1,41 +1,18 @@
 
 package com.example.personalacademicassistant
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -78,47 +55,171 @@ fun AIAssignmentHelperScreen() {
     var errorMessage by remember { mutableStateOf("") }
     var saveMessage by remember { mutableStateOf("") }
 
-    val blue = Color(0xFF1565C0)
+    val assignmentTypes = listOf(
+        "Programming Assignment",
+        "Theory Assignment",
+        "Research Assignment",
+        "Case Study",
+        "Project Report",
+        "Lab Assignment"
+    )
+
+    val academicLevels = listOf(
+        "B.Tech",
+        "BCA",
+        "B.Sc",
+        "M.Tech",
+        "MCA",
+        "Other"
+    )
+
+    val wordCounts = listOf(
+        "500 words",
+        "1000 words",
+        "1500 words",
+        "2000 words",
+        "2500 words"
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        Text(
-            text = "🤖 AI Assignment Helper",
-            fontSize = 25.sp,
-            fontWeight = FontWeight.Bold,
-            color = blue
-        )
-
-        Text(
-            text = "Create structured assignment plans and understand academic topics with Gemini AI.",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        // Header
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
+            )
+        ) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(18.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Surface(
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "🤖",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+
+                    Text(
+                        text = "AI Assignment Helper",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "Plan, understand and prepare better academic assignments with Gemini AI.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.tertiary,
+                                    CircleShape
+                                )
+                        )
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        Text(
+                            text = "Gemini AI Ready",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+        }
+
+        // Assignment details heading
+
+        Column {
+
+            Text(
+                text = "Create Your Assignment",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Enter the details below to generate a structured academic guide.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // Details form
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 2.dp
             )
         ) {
 
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
 
                 Text(
-                    text = "Assignment Details",
-                    fontSize = 19.sp,
+                    text = "📋 Assignment Details",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
+
+                HorizontalDivider()
 
                 OutlinedTextField(
                     value = subject,
@@ -126,12 +227,16 @@ fun AIAssignmentHelperScreen() {
                         subject = it
                         errorMessage = ""
                     },
-                    label = { Text("Subject Name") },
+                    label = {
+                        Text("Subject Name")
+                    },
                     placeholder = {
                         Text("Example: Data Structures")
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    enabled = !isGenerating
                 )
 
                 OutlinedTextField(
@@ -140,25 +245,22 @@ fun AIAssignmentHelperScreen() {
                         assignmentTitle = it
                         errorMessage = ""
                     },
-                    label = { Text("Assignment Title") },
+                    label = {
+                        Text("Assignment Title")
+                    },
                     placeholder = {
                         Text("Example: Binary Search Trees")
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    enabled = !isGenerating
                 )
 
                 AssignmentDropdown(
                     label = "Assignment Type",
                     selected = assignmentType,
-                    options = listOf(
-                        "Programming Assignment",
-                        "Theory Assignment",
-                        "Research Assignment",
-                        "Case Study",
-                        "Project Report",
-                        "Lab Assignment"
-                    ),
+                    options = assignmentTypes,
                     onSelected = {
                         assignmentType = it
                     }
@@ -167,14 +269,7 @@ fun AIAssignmentHelperScreen() {
                 AssignmentDropdown(
                     label = "Academic Level",
                     selected = academicLevel,
-                    options = listOf(
-                        "B.Tech",
-                        "BCA",
-                        "B.Sc",
-                        "M.Tech",
-                        "MCA",
-                        "Other"
-                    ),
+                    options = academicLevels,
                     onSelected = {
                         academicLevel = it
                     }
@@ -183,13 +278,7 @@ fun AIAssignmentHelperScreen() {
                 AssignmentDropdown(
                     label = "Expected Length",
                     selected = wordCount,
-                    options = listOf(
-                        "500 words",
-                        "1000 words",
-                        "1500 words",
-                        "2000 words",
-                        "2500 words"
-                    ),
+                    options = wordCounts,
                     onSelected = {
                         wordCount = it
                     }
@@ -211,9 +300,14 @@ fun AIAssignmentHelperScreen() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(150.dp),
-                    minLines = 4
+                        .height(155.dp),
+                    minLines = 4,
+                    maxLines = 6,
+                    shape = RoundedCornerShape(14.dp),
+                    enabled = !isGenerating
                 )
+
+                // Generate button
 
                 Button(
                     onClick = {
@@ -227,6 +321,8 @@ fun AIAssignmentHelperScreen() {
                                 "Please enter the subject, assignment title and instructions."
                             return@Button
                         }
+
+                        if (isGenerating) return@Button
 
                         scope.launch {
 
@@ -293,163 +389,275 @@ fun AIAssignmentHelperScreen() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(54.dp),
                     enabled = !isGenerating,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = blue
-                    )
+                    shape = RoundedCornerShape(15.dp)
                 ) {
 
                     if (isGenerating) {
 
                         CircularProgressIndicator(
-                            modifier = Modifier.height(22.dp),
-                            color = Color.White,
+                            modifier = Modifier.size(22.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
                             strokeWidth = 2.dp
                         )
 
-                        Spacer(modifier = Modifier.padding(4.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                        Text("Generating...")
+                        Text("Generating Assignment...")
 
                     } else {
 
                         Text(
                             text = "✨ Generate Assignment",
-                            fontSize = 16.sp
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                 }
             }
         }
 
-        if (errorMessage.isNotBlank()) {
+        // Loading message
 
-            Text(
-                text = errorMessage,
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 14.sp
-            )
-        }
-
-        if (generatedContent.isNotBlank()) {
+        if (isGenerating) {
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                elevation = CardDefaults.cardElevation(3.dp)
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
             ) {
 
-                Column(
+                Row(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(25.dp),
+                        strokeWidth = 2.dp
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column {
+
+                        Text(
+                            text = "Gemini is preparing your assignment...",
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+
+                        Text(
+                            text = "This may take a few moments.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+        }
+
+        // Error message
+
+        if (errorMessage.isNotBlank()) {
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+
+                Text(
+                    text = "⚠️ $errorMessage",
+                    modifier = Modifier.padding(14.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+
+        // Generated assignment
+
+        if (generatedContent.isNotBlank()) {
+
+            Column {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
 
                     Text(
                         text = "📘 Generated Assignment",
-                        fontSize = 20.sp,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
-                        color = blue
+                        modifier = Modifier.weight(1f)
                     )
 
-                    Text(
-                        text = generatedContent,
-                        fontSize = 14.sp,
-                        lineHeight = 23.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Button(
-                        onClick = {
-
-                            val uid = FirebaseAuth.getInstance()
-                                .currentUser?.uid
-
-                            if (uid == null) {
-                                errorMessage =
-                                    "Please log in to save your assignment."
-                                return@Button
-                            }
-
-                            scope.launch {
-
-                                isSaving = true
-                                saveMessage = ""
-                                errorMessage = ""
-
-                                try {
-
-                                    FirebaseFirestore.getInstance()
-                                        .collection("users")
-                                        .document(uid)
-                                        .collection("assignmentHelpers")
-                                        .add(
-                                            hashMapOf(
-                                                "subject" to subject,
-                                                "assignmentTitle" to assignmentTitle,
-                                                "assignmentType" to assignmentType,
-                                                "academicLevel" to academicLevel,
-                                                "wordCount" to wordCount,
-                                                "instructions" to instructions,
-                                                "generatedContent" to generatedContent,
-                                                "createdAt" to FieldValue.serverTimestamp()
-                                            )
-                                        )
-
-                                    saveMessage =
-                                        "Assignment saved successfully to Firebase!"
-
-                                } catch (e: Exception) {
-
-                                    errorMessage = e.localizedMessage
-                                        ?: "Unable to save assignment."
-
-                                } finally {
-                                    isSaving = false
-                                }
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        enabled = !isSaving,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32)
-                        )
+                    Surface(
+                        shape = RoundedCornerShape(50.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
                     ) {
 
-                        if (isSaving) {
-
-                            CircularProgressIndicator(
-                                modifier = Modifier.height(20.dp),
-                                color = Color.White,
-                                strokeWidth = 2.dp
-                            )
-
-                            Spacer(modifier = Modifier.padding(4.dp))
-
-                            Text("Saving...")
-
-                        } else {
-
-                            Text("💾 Save Assignment")
-                        }
+                        Text(
+                            text = "AI Generated",
+                            modifier = Modifier.padding(
+                                horizontal = 10.dp,
+                                vertical = 6.dp
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
                     }
+                }
 
-                    if (saveMessage.isNotBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 2.dp
+                    )
+                ) {
+
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
 
                         Text(
-                            text = saveMessage,
-                            color = Color(0xFF2E7D32),
-                            fontWeight = FontWeight.SemiBold
+                            text = assignmentTitle,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
                         )
+
+                        Text(
+                            text = "$subject • $assignmentType",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        HorizontalDivider()
+
+                        Text(
+                            text = generatedContent,
+                            style = MaterialTheme.typography.bodyLarge,
+                            lineHeight = MaterialTheme.typography.bodyLarge.lineHeight,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Save assignment
+
+                        Button(
+                            onClick = {
+
+                                val uid = FirebaseAuth.getInstance()
+                                    .currentUser?.uid
+
+                                if (uid == null) {
+                                    errorMessage =
+                                        "Please log in to save your assignment."
+                                    return@Button
+                                }
+
+                                if (isSaving) return@Button
+
+                                scope.launch {
+
+                                    isSaving = true
+                                    saveMessage = ""
+                                    errorMessage = ""
+
+                                    try {
+
+                                        FirebaseFirestore.getInstance()
+                                            .collection("users")
+                                            .document(uid)
+                                            .collection("assignmentHelpers")
+                                            .add(
+                                                hashMapOf(
+                                                    "subject" to subject,
+                                                    "assignmentTitle" to assignmentTitle,
+                                                    "assignmentType" to assignmentType,
+                                                    "academicLevel" to academicLevel,
+                                                    "wordCount" to wordCount,
+                                                    "instructions" to instructions,
+                                                    "generatedContent" to generatedContent,
+                                                    "createdAt" to FieldValue.serverTimestamp()
+                                                )
+                                            )
+
+                                        saveMessage =
+                                            "Assignment saved successfully to Firebase!"
+
+                                    } catch (e: Exception) {
+
+                                        errorMessage = e.localizedMessage
+                                            ?: "Unable to save assignment."
+
+                                    } finally {
+                                        isSaving = false
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            enabled = !isSaving,
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary
+                            )
+                        ) {
+
+                            if (isSaving) {
+
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(21.dp),
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    strokeWidth = 2.dp
+                                )
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Text("Saving...")
+
+                            } else {
+
+                                Text(
+                                    text = "💾 Save Assignment",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        if (saveMessage.isNotBlank()) {
+
+                            Text(
+                                text = "✓ $saveMessage",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
@@ -467,13 +675,14 @@ fun AssignmentDropdown(
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(5.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
 
         Text(
             text = label,
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Box(
@@ -484,8 +693,14 @@ fun AssignmentDropdown(
                 onClick = {
                     expanded = true
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp),
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(
+                    horizontal = 14.dp,
+                    vertical = 12.dp
+                )
             ) {
 
                 Row(
@@ -494,8 +709,16 @@ fun AssignmentDropdown(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
 
-                    Text(selected)
-                    Text("▼")
+                    Text(
+                        text = selected,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                    Text(
+                        text = "▼",
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 
@@ -503,18 +726,36 @@ fun AssignmentDropdown(
                 expanded = expanded,
                 onDismissRequest = {
                     expanded = false
-                }
+                },
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
 
                 options.forEach { option ->
 
                     DropdownMenuItem(
                         text = {
-                            Text(option)
+                            Text(
+                                text = option,
+                                fontWeight = if (selected == option) {
+                                    FontWeight.Bold
+                                } else {
+                                    FontWeight.Normal
+                                }
+                            )
                         },
                         onClick = {
                             onSelected(option)
                             expanded = false
+                        },
+                        trailingIcon = {
+                            if (selected == option) {
+                                Text(
+                                    text = "✓",
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     )
                 }
