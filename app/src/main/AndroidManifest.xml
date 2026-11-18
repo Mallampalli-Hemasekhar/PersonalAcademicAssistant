@@ -36,6 +36,18 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!-- Exam Reminder Receiver -->
+        <receiver
+            android:name=".ExamReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Study Session Reminder Receiver -->
+        <receiver
+            android:name=".StudySessionReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>

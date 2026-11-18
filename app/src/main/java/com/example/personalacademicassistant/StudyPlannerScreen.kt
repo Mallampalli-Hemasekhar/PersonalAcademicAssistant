@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +47,7 @@ fun StudyPlannerScreen() {
 
     val currentUser = FirebaseAuth.getInstance().currentUser
     val firestore = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
     val colors = MaterialTheme.colorScheme
 
     DisposableEffect(currentUser?.uid) {
@@ -76,17 +78,39 @@ fun StudyPlannerScreen() {
 
                         for (document in snapshot.documents) {
 
-                            studyPlans.add(
-                                StudyPlan(
-                                    id = document.id,
-                                    subject = document.getString("subject") ?: "",
-                                    topic = document.getString("topic") ?: "",
-                                    studyDate = document.getString("studyDate") ?: "",
-                                    startTime = document.getString("startTime") ?: "",
-                                    endTime = document.getString("endTime") ?: "",
-                                    completed = document.getBoolean("completed") ?: false
-                                )
+                            val plan = StudyPlan(
+                                id = document.id,
+                                subject = document.getString("subject") ?: "",
+                                topic = document.getString("topic") ?: "",
+                                studyDate = document.getString("studyDate") ?: "",
+                                startTime = document.getString("startTime") ?: "",
+                                endTime = document.getString("endTime") ?: "",
+                                completed = document.getBoolean("completed") ?: false
                             )
+
+                            studyPlans.add(plan)
+
+                            // Schedule reminders for pending sessions.
+                            // Completed sessions have their reminders cancelled.
+                            if (plan.completed) {
+
+                                StudySessionReminderScheduler.cancelSession(
+                                    context.applicationContext,
+                                    plan.id
+                                )
+
+                            } else {
+
+                                StudySessionReminderScheduler.scheduleSession(
+                                    context.applicationContext,
+                                    currentUser.uid,
+                                    plan.id,
+                                    plan.subject,
+                                    plan.topic,
+                                    plan.studyDate,
+                                    plan.startTime
+                                )
+                            }
                         }
                     }
 
@@ -133,8 +157,6 @@ fun StudyPlannerScreen() {
 
         Spacer(modifier = Modifier.height(22.dp))
 
-        // Study plan statistics
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -163,8 +185,6 @@ fun StudyPlannerScreen() {
         }
 
         Spacer(modifier = Modifier.height(20.dp))
-
-        // Overall progress
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -225,8 +245,6 @@ fun StudyPlannerScreen() {
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Create study plan
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -385,7 +403,8 @@ fun StudyPlannerScreen() {
                                         endTime = ""
 
                                         successMessage =
-                                            "Study plan added successfully!"
+                                            "Study plan added successfully! Reminder scheduled 10 minutes before the session."
+
                                         isSaving = false
                                     }
                                     .addOnFailureListener { exception ->
@@ -445,8 +464,6 @@ fun StudyPlannerScreen() {
         }
 
         Spacer(modifier = Modifier.height(26.dp))
-
-        // Study sessions heading
 
         Text(
             text = "My Study Sessions",
@@ -549,6 +566,12 @@ fun StudyPlannerScreen() {
                     onDelete = {
 
                         if (currentUser != null) {
+
+                            // Cancel the alarm immediately when deleting.
+                            StudySessionReminderScheduler.cancelSession(
+                                context.applicationContext,
+                                plan.id
+                            )
 
                             firestore
                                 .collection("users")

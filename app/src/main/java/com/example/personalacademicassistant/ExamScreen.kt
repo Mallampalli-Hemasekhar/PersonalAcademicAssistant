@@ -12,7 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +40,7 @@ fun ExamScreen() {
     val auth = remember { FirebaseAuth.getInstance() }
     val firestore = remember { FirebaseFirestore.getInstance() }
     val currentUser = auth.currentUser
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
 
@@ -57,22 +58,34 @@ fun ExamScreen() {
                     exams.clear()
 
                     for (document in result.documents) {
-                        exams.add(
-                            Exam(
-                                id = document.id,
-                                subject = document.getString("subject") ?: "",
-                                examType = document.getString("examType") ?: "",
-                                examDate = document.getString("examDate") ?: "",
-                                examTime = document.getString("examTime") ?: "",
-                                location = document.getString("location") ?: ""
-                            )
+
+                        val exam = Exam(
+                            id = document.id,
+                            subject = document.getString("subject") ?: "",
+                            examType = document.getString("examType") ?: "",
+                            examDate = document.getString("examDate") ?: "",
+                            examTime = document.getString("examTime") ?: "",
+                            location = document.getString("location") ?: ""
+                        )
+
+                        exams.add(exam)
+
+                        // Schedule reminders for existing exams.
+                        ExamReminderScheduler.scheduleExam(
+                            context = context,
+                            examId = exam.id,
+                            subject = exam.subject,
+                            examDate = exam.examDate,
+                            examTime = exam.examTime,
+                            location = exam.location
                         )
                     }
 
                     isLoading = false
                 }
                 .addOnFailureListener { exception ->
-                    errorMessage = exception.message ?: "Failed to load exams."
+                    errorMessage = exception.message
+                        ?: "Failed to load exams."
                     isLoading = false
                 }
         }
@@ -106,6 +119,7 @@ fun ExamScreen() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+
             ExamStatCard(
                 title = "Total Exams",
                 value = exams.size.toString(),
@@ -141,6 +155,7 @@ fun ExamScreen() {
         Spacer(modifier = Modifier.height(18.dp))
 
         if (errorMessage.isNotEmpty()) {
+
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer
@@ -158,7 +173,9 @@ fun ExamScreen() {
         }
 
         when {
+
             isLoading -> {
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -170,16 +187,22 @@ fun ExamScreen() {
             }
 
             exams.isEmpty() -> {
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = "📝", fontSize = 55.sp)
+
+                        Text(
+                            text = "📝",
+                            fontSize = 55.sp
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -202,6 +225,7 @@ fun ExamScreen() {
             }
 
             else -> {
+
                 Text(
                     text = "Your Examinations",
                     fontSize = 18.sp,
@@ -215,6 +239,7 @@ fun ExamScreen() {
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+
                     items(
                         items = exams,
                         key = { it.id }
@@ -223,6 +248,7 @@ fun ExamScreen() {
                         ExamCard(
                             exam = exam,
                             onDelete = {
+
                                 currentUser?.let { user ->
 
                                     firestore.collection("users")
@@ -231,9 +257,17 @@ fun ExamScreen() {
                                         .document(exam.id)
                                         .delete()
                                         .addOnSuccessListener {
+
+                                            // Cancel all reminders for this exam.
+                                            ExamReminderScheduler.cancelExam(
+                                                context = context,
+                                                examId = exam.id
+                                            )
+
                                             exams.remove(exam)
                                         }
                                         .addOnFailureListener { exception ->
+
                                             errorMessage = exception.message
                                                 ?: "Failed to delete exam."
                                         }
@@ -247,6 +281,7 @@ fun ExamScreen() {
     }
 
     if (showAddExam) {
+
         AddExamDialog(
             onDismiss = {
                 showAddExam = false
@@ -254,8 +289,10 @@ fun ExamScreen() {
             onAddExam = { exam ->
 
                 if (currentUser == null) {
+
                     errorMessage = "User is not logged in."
                     showAddExam = false
+
                 } else {
 
                     val examData = hashMapOf(
@@ -272,14 +309,27 @@ fun ExamScreen() {
                         .add(examData)
                         .addOnSuccessListener { documentReference ->
 
-                            exams.add(
-                                exam.copy(id = documentReference.id)
+                            val savedExam = exam.copy(
+                                id = documentReference.id
+                            )
+
+                            exams.add(savedExam)
+
+                            // Schedule 3 advance reminders.
+                            ExamReminderScheduler.scheduleExam(
+                                context = context,
+                                examId = savedExam.id,
+                                subject = savedExam.subject,
+                                examDate = savedExam.examDate,
+                                examTime = savedExam.examTime,
+                                location = savedExam.location
                             )
 
                             showAddExam = false
                             errorMessage = ""
                         }
                         .addOnFailureListener { exception ->
+
                             errorMessage = exception.message
                                 ?: "Failed to add exam."
                         }
@@ -295,6 +345,7 @@ fun ExamStatCard(
     value: String,
     modifier: Modifier = Modifier
 ) {
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
@@ -303,9 +354,11 @@ fun ExamStatCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+
             Text(
                 text = title,
                 fontSize = 13.sp,
@@ -329,6 +382,7 @@ fun ExamCard(
     exam: Exam,
     onDelete: () -> Unit
 ) {
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -337,6 +391,7 @@ fun ExamCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+
         Column(
             modifier = Modifier.padding(18.dp)
         ) {
@@ -345,7 +400,9 @@ fun ExamCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 Column(modifier = Modifier.weight(1f)) {
+
                     Text(
                         text = exam.subject,
                         fontSize = 19.sp,
@@ -359,6 +416,7 @@ fun ExamCard(
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.primaryContainer
                     ) {
+
                         Text(
                             text = exam.examType,
                             modifier = Modifier.padding(
@@ -391,7 +449,9 @@ fun ExamCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
+
                 TextButton(onClick = onDelete) {
+
                     Text(
                         text = "Delete Exam",
                         color = MaterialTheme.colorScheme.error,
@@ -409,12 +469,14 @@ fun ExamInfoRow(
     label: String,
     value: String
 ) {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         Text(
             text = icon,
             fontSize = 16.sp
@@ -443,6 +505,7 @@ fun AddExamDialog(
     onDismiss: () -> Unit,
     onAddExam: (Exam) -> Unit
 ) {
+
     var subject by remember { mutableStateOf("") }
     var examType by remember { mutableStateOf("") }
     var examDate by remember { mutableStateOf("") }
@@ -470,6 +533,7 @@ fun AddExamDialog(
             )
         },
         text = {
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -490,6 +554,7 @@ fun AddExamDialog(
                 )
 
                 Box {
+
                     OutlinedTextField(
                         value = examType,
                         onValueChange = {},
@@ -505,6 +570,7 @@ fun AddExamDialog(
                             .matchParentSize()
                             .padding(top = 8.dp)
                     ) {
+
                         TextButton(
                             onClick = { expanded = true },
                             modifier = Modifier.fillMaxSize()
@@ -515,7 +581,9 @@ fun AddExamDialog(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
+
                         examTypes.forEach { type ->
+
                             DropdownMenuItem(
                                 text = { Text(type) },
                                 onClick = {
@@ -565,6 +633,7 @@ fun AddExamDialog(
                 )
 
                 if (validationMessage.isNotEmpty()) {
+
                     Text(
                         text = validationMessage,
                         color = MaterialTheme.colorScheme.error,
@@ -574,8 +643,10 @@ fun AddExamDialog(
             }
         },
         confirmButton = {
+
             Button(
                 onClick = {
+
                     if (
                         subject.isNotBlank() &&
                         examType.isNotBlank() &&
@@ -583,6 +654,7 @@ fun AddExamDialog(
                         examTime.isNotBlank() &&
                         location.isNotBlank()
                     ) {
+
                         onAddExam(
                             Exam(
                                 subject = subject.trim(),
@@ -592,7 +664,9 @@ fun AddExamDialog(
                                 location = location.trim()
                             )
                         )
+
                     } else {
+
                         validationMessage = "Please fill in all fields."
                     }
                 }
@@ -601,6 +675,7 @@ fun AddExamDialog(
             }
         },
         dismissButton = {
+
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
