@@ -2,6 +2,7 @@
 package com.example.personalacademicassistant
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class Assignment(
     val id: String = "",
@@ -25,6 +30,44 @@ data class Assignment(
     val priority: String = "",
     val completed: Boolean = false
 )
+
+private val AssignmentBlue = Color(0xFF5278E8)
+private val AssignmentGreen = Color(0xFF26A69A)
+private val AssignmentOrange = Color(0xFFFFA726)
+private val AssignmentRed = Color(0xFFE65B5B)
+
+private fun isAssignmentOverdue(assignment: Assignment): Boolean {
+    if (assignment.completed) return false
+
+    val formats = listOf(
+        "dd MMM yyyy",
+        "d MMM yyyy",
+        "dd MMMM yyyy",
+        "d MMMM yyyy",
+        "dd-MM-yyyy",
+        "dd/MM/yyyy",
+        "yyyy-MM-dd"
+    )
+
+    val dueDate = formats.firstNotNullOfOrNull { pattern ->
+        try {
+            SimpleDateFormat(pattern, Locale.ENGLISH).apply {
+                isLenient = false
+            }.parse(assignment.dueDate)
+        } catch (e: Exception) {
+            null
+        }
+    } ?: return false
+
+    val today = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+
+    return dueDate.before(today.time)
+}
 
 @Composable
 fun AssignmentScreen() {
@@ -43,12 +86,15 @@ fun AssignmentScreen() {
 
     val pendingCount = assignments.count { !it.completed }
     val completedCount = assignments.count { it.completed }
+    val overdueCount = assignments.count { isAssignmentOverdue(it) }
 
     LaunchedEffect(Unit) {
+
         if (currentUser == null) {
             errorMessage = "User is not logged in."
             isLoading = false
         } else {
+
             firestore.collection("users")
                 .document(currentUser.uid)
                 .collection("assignments")
@@ -73,8 +119,10 @@ fun AssignmentScreen() {
                     isLoading = false
                 }
                 .addOnFailureListener { exception ->
+
                     errorMessage = exception.message
                         ?: "Failed to load assignments."
+
                     isLoading = false
                 }
         }
@@ -83,76 +131,128 @@ fun AssignmentScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 18.dp, vertical = 16.dp)
     ) {
 
-        Text(
-            text = "My Assignments 📚",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 
-        Spacer(modifier = Modifier.height(5.dp))
+            Column(modifier = Modifier.weight(1f)) {
 
-        Text(
-            text = "Organize your tasks and stay ahead of deadlines.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+                Text(
+                    text = "My Assignments",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-        Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(5.dp))
+
+                Text(
+                    text = "Stay organized. Meet every deadline.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(15.dp),
+                color = AssignmentBlue.copy(alpha = 0.12f)
+            ) {
+                Text(
+                    text = "📚",
+                    fontSize = 27.sp,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(22.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(9.dp)
         ) {
+
+            AssignmentStatCard(
+                title = "Total",
+                count = assignments.size,
+                color = AssignmentBlue,
+                modifier = Modifier.weight(1f)
+            )
+
             AssignmentStatCard(
                 title = "Pending",
                 count = pendingCount,
-                color = Color(0xFFFFA726),
+                color = AssignmentOrange,
                 modifier = Modifier.weight(1f)
             )
 
             AssignmentStatCard(
                 title = "Completed",
                 count = completedCount,
-                color = Color(0xFF26A69A),
+                color = AssignmentGreen,
                 modifier = Modifier.weight(1f)
             )
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(14.dp))
+
+        if (overdueCount > 0) {
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = AssignmentRed.copy(alpha = 0.10f)
+            ) {
+
+                Text(
+                    text = "⚠ $overdueCount assignment(s) overdue. Check your deadlines!",
+                    modifier = Modifier.padding(14.dp),
+                    color = AssignmentRed,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+        }
 
         Button(
             onClick = {
-                showAddAssignment = true
                 errorMessage = ""
+                showAddAssignment = true
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .height(54.dp),
             shape = RoundedCornerShape(16.dp)
         ) {
+
             Text(
                 text = "+ Add New Assignment",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
             )
         }
 
         Spacer(modifier = Modifier.height(18.dp))
 
         if (errorMessage.isNotEmpty()) {
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 )
             ) {
+
                 Text(
                     text = errorMessage,
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(14.dp),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
@@ -160,8 +260,19 @@ fun AssignmentScreen() {
             Spacer(modifier = Modifier.height(12.dp))
         }
 
+        Text(
+            text = "Your Tasks",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         when {
+
             isLoading -> {
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -169,8 +280,11 @@ fun AssignmentScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+
                     CircularProgressIndicator()
+
                     Spacer(modifier = Modifier.height(12.dp))
+
                     Text(
                         text = "Loading your assignments...",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -179,6 +293,7 @@ fun AssignmentScreen() {
             }
 
             assignments.isEmpty() -> {
+
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -186,9 +301,13 @@ fun AssignmentScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(text = "📝", fontSize = 54.sp)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "📝",
+                        fontSize = 52.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(15.dp))
 
                     Text(
                         text = "No assignments yet",
@@ -206,11 +325,13 @@ fun AssignmentScreen() {
             }
 
             else -> {
+
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(bottom = 20.dp)
                 ) {
+
                     items(
                         items = assignments,
                         key = { it.id }
@@ -220,15 +341,18 @@ fun AssignmentScreen() {
                             assignment = assignment,
 
                             onToggleComplete = {
+
                                 val updatedStatus = !assignment.completed
 
                                 currentUser?.let { user ->
+
                                     firestore.collection("users")
                                         .document(user.uid)
                                         .collection("assignments")
                                         .document(assignment.id)
                                         .update("completed", updatedStatus)
                                         .addOnSuccessListener {
+
                                             val index = assignments.indexOf(assignment)
 
                                             if (index != -1) {
@@ -239,6 +363,7 @@ fun AssignmentScreen() {
                                             }
                                         }
                                         .addOnFailureListener { exception ->
+
                                             errorMessage = exception.message
                                                 ?: "Failed to update assignment."
                                         }
@@ -246,7 +371,9 @@ fun AssignmentScreen() {
                             },
 
                             onDelete = {
+
                                 currentUser?.let { user ->
+
                                     firestore.collection("users")
                                         .document(user.uid)
                                         .collection("assignments")
@@ -256,6 +383,7 @@ fun AssignmentScreen() {
                                             assignments.remove(assignment)
                                         }
                                         .addOnFailureListener { exception ->
+
                                             errorMessage = exception.message
                                                 ?: "Failed to delete assignment."
                                         }
@@ -269,16 +397,21 @@ fun AssignmentScreen() {
     }
 
     if (showAddAssignment) {
+
         AddAssignmentDialog(
             onDismiss = {
                 showAddAssignment = false
             },
+
             onAddAssignment = { assignment ->
 
                 if (currentUser == null) {
+
                     errorMessage = "User is not logged in."
                     showAddAssignment = false
+
                 } else {
+
                     val assignmentData = hashMapOf(
                         "title" to assignment.title,
                         "subject" to assignment.subject,
@@ -303,6 +436,7 @@ fun AssignmentScreen() {
                             errorMessage = ""
                         }
                         .addOnFailureListener { exception ->
+
                             errorMessage = exception.message
                                 ?: "Failed to add assignment."
                         }
@@ -319,9 +453,10 @@ fun AssignmentStatCard(
     color: Color,
     modifier: Modifier = Modifier
 ) {
+
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(17.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -329,20 +464,26 @@ fun AssignmentStatCard(
             defaultElevation = 2.dp
         )
     ) {
+
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(
+                horizontal = 10.dp,
+                vertical = 16.dp
+            )
         ) {
+
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(9.dp))
 
             Text(
                 text = count.toString(),
-                fontSize = 28.sp,
+                fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
@@ -356,17 +497,26 @@ fun AssignmentCard(
     onToggleComplete: () -> Unit,
     onDelete: () -> Unit
 ) {
+
     val priorityColor = when (assignment.priority.lowercase()) {
-        "high" -> Color(0xFFE53935)
-        "medium" -> Color(0xFFFFA000)
-        else -> Color(0xFF43A047)
+        "high" -> AssignmentRed
+        "medium" -> AssignmentOrange
+        else -> AssignmentGreen
+    }
+
+    val overdue = isAssignmentOverdue(assignment)
+
+    val statusColor = when {
+        assignment.completed -> AssignmentGreen
+        overdue -> AssignmentRed
+        else -> AssignmentOrange
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(19.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -374,17 +524,19 @@ fun AssignmentCard(
             defaultElevation = 2.dp
         )
     ) {
+
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
+
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
+
                     Text(
                         text = assignment.title,
                         style = MaterialTheme.typography.titleMedium,
@@ -392,7 +544,7 @@ fun AssignmentCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    Spacer(modifier = Modifier.height(5.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = "📚 ${assignment.subject}",
@@ -402,73 +554,91 @@ fun AssignmentCard(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(9.dp),
                     color = priorityColor.copy(alpha = 0.13f)
                 ) {
+
                     Text(
-                        text = assignment.priority,
+                        text = assignment.priority.ifBlank { "Normal" },
                         modifier = Modifier.padding(
-                            horizontal = 11.dp,
+                            horizontal = 10.dp,
                             vertical = 6.dp
                         ),
                         color = priorityColor,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(15.dp))
 
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
+            Spacer(modifier = Modifier.height(13.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                Text(
+                    text = "📅",
+                    fontSize = 16.sp
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = "Due: ${assignment.dueDate}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (overdue) {
+                    Text(
+                        text = "OVERDUE",
+                        color = AssignmentRed,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
 
-            Text(
-                text = "📅 Due date: ${assignment.dueDate}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
             Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = if (assignment.completed) {
-                    Color(0xFF26A69A).copy(alpha = 0.13f)
-                } else {
-                    Color(0xFFFFA726).copy(alpha = 0.13f)
-                }
+                shape = RoundedCornerShape(9.dp),
+                color = statusColor.copy(alpha = 0.12f)
             ) {
+
                 Text(
-                    text = if (assignment.completed) {
-                        "✓ Completed"
-                    } else {
-                        "◷ Pending"
+                    text = when {
+                        assignment.completed -> "✓ Completed"
+                        overdue -> "⚠ Overdue"
+                        else -> "◷ Pending"
                     },
                     modifier = Modifier.padding(
-                        horizontal = 12.dp,
+                        horizontal = 11.dp,
                         vertical = 7.dp
                     ),
-                    color = if (assignment.completed) {
-                        Color(0xFF26A69A)
-                    } else {
-                        Color(0xFFE58A00)
-                    },
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp
+                    color = statusColor,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(9.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
                 TextButton(
                     onClick = onToggleComplete
                 ) {
@@ -499,26 +669,41 @@ fun AddAssignmentDialog(
     onDismiss: () -> Unit,
     onAddAssignment: (Assignment) -> Unit
 ) {
+
     var title by remember { mutableStateOf("") }
     var subject by remember { mutableStateOf("") }
     var dueDate by remember { mutableStateOf("") }
-    var priority by remember { mutableStateOf("") }
+    var priority by remember { mutableStateOf("Medium") }
     var expanded by remember { mutableStateOf(false) }
 
     val priorities = listOf("Low", "Medium", "High")
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
 
         title = {
-            Text(
-                text = "Add New Assignment",
-                fontWeight = FontWeight.Bold
-            )
+            Column {
+
+                Text(
+                    text = "New Assignment",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "Add your academic task details.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         },
 
         text = {
             Column {
+
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
@@ -526,7 +711,7 @@ fun AddAssignmentDialog(
                     label = { Text("Assignment Title") },
                     placeholder = { Text("Enter assignment name") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(13.dp)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -538,7 +723,7 @@ fun AddAssignmentDialog(
                     label = { Text("Subject") },
                     placeholder = { Text("Enter subject name") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(13.dp)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -550,21 +735,21 @@ fun AddAssignmentDialog(
                     label = { Text("Due Date") },
                     placeholder = { Text("Example: 20 Oct 2026") },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(13.dp)
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Box {
+
                     OutlinedTextField(
                         value = priority,
                         onValueChange = {},
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Priority") },
-                        placeholder = { Text("Select priority") },
                         readOnly = true,
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(13.dp)
                     )
 
                     Box(
@@ -572,8 +757,11 @@ fun AddAssignmentDialog(
                             .matchParentSize()
                             .padding(top = 8.dp)
                     ) {
+
                         TextButton(
-                            onClick = { expanded = true },
+                            onClick = {
+                                expanded = true
+                            },
                             modifier = Modifier.fillMaxSize()
                         ) {
                             Spacer(modifier = Modifier.weight(1f))
@@ -582,11 +770,17 @@ fun AddAssignmentDialog(
 
                     DropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = {
+                            expanded = false
+                        }
                     ) {
+
                         priorities.forEach { selectedPriority ->
+
                             DropdownMenuItem(
-                                text = { Text(selectedPriority) },
+                                text = {
+                                    Text(selectedPriority)
+                                },
                                 onClick = {
                                     priority = selectedPriority
                                     expanded = false
@@ -601,12 +795,13 @@ fun AddAssignmentDialog(
         confirmButton = {
             Button(
                 onClick = {
+
                     if (
                         title.isNotBlank() &&
                         subject.isNotBlank() &&
-                        dueDate.isNotBlank() &&
-                        priority.isNotBlank()
+                        dueDate.isNotBlank()
                     ) {
+
                         onAddAssignment(
                             Assignment(
                                 title = title.trim(),
@@ -619,8 +814,7 @@ fun AddAssignmentDialog(
                 },
                 enabled = title.isNotBlank() &&
                         subject.isNotBlank() &&
-                        dueDate.isNotBlank() &&
-                        priority.isNotBlank()
+                        dueDate.isNotBlank()
             ) {
                 Text("Add Assignment")
             }
